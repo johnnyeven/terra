@@ -36,8 +36,8 @@ var RootCmd = &cobra.Command{
 			LocalAddr: ":6881",
 			SeedNodes: []string{
 				"router.bittorrent.com:6881",
-				//"router.utorrent.com:6881",
-				//"dht.transmissionbt.com:6881",
+				"router.utorrent.com:6881",
+				"dht.transmissionbt.com:6881",
 			},
 		}
 		dht.Run()

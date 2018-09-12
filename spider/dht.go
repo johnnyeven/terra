@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"git.profzone.net/terra/transport/krpc"
 	"fmt"
+	"github.com/ethereum/go-ethereum/p2p/nat"
 )
 
 type DistributedHashTable struct {
@@ -12,17 +13,20 @@ type DistributedHashTable struct {
 	LocalAddr     string
 	SeedNodes     []string
 	conn          *net.UDPConn
+	nat           nat.Interface
 	self          *node
 	packetChannel chan krpc.Packet
+	quitChannel   chan struct{}
 }
 
 func (dht *DistributedHashTable) Run() {
 	dht.init()
+	dht.listen()
 	dht.join()
 
 	for {
 		select {
-		case packet := <- dht.packetChannel:
+		case packet := <-dht.packetChannel:
 			data, err := Decode(packet.Data)
 			if err != nil {
 				logrus.Errorf("Decode err: %v", err)
@@ -45,12 +49,15 @@ func (dht *DistributedHashTable) init() {
 	}
 
 	dht.conn = listener.(*net.UDPConn)
+	dht.nat = nat.Any()
 	dht.packetChannel = make(chan krpc.Packet)
+	dht.quitChannel = make(chan struct{})
 
 	dht.self, err = newNode(randomString(20), dht.Network, dht.LocalAddr)
 	if err != nil {
 		logrus.Panicf("[DistributedHashTable].init newNode err: %v", err)
 	}
+	logrus.Info("initialized")
 }
 
 func (dht *DistributedHashTable) join() {
@@ -66,14 +73,21 @@ func (dht *DistributedHashTable) join() {
 			"target": dht.self.id.RawString(),
 		}
 
-		_, err = dht.conn.WriteToUDP([]byte(Encode(data)), udpAddr)
+		count, err := dht.conn.WriteToUDP([]byte(Encode(data)), udpAddr)
 		if err != nil {
 			logrus.Warningf("[DistributedHashTable].join dht.conn.WriteToUDP err: %v", err)
 		}
+		logrus.Infof("send %d", count)
 	}
 }
 
 func (dht *DistributedHashTable) listen() {
+	realaddr := dht.conn.LocalAddr().(*net.UDPAddr)
+	if dht.nat != nil {
+		if !realaddr.IP.IsLoopback() {
+			go nat.Map(dht.nat, dht.quitChannel, "udp", realaddr.Port, realaddr.Port, "terra discovery")
+		}
+	}
 	go func() {
 		buff := make([]byte, 8192)
 		for {
@@ -85,6 +99,7 @@ func (dht *DistributedHashTable) listen() {
 			dht.packetChannel <- krpc.Packet{buff[:n], raddr}
 		}
 	}()
+	logrus.Info("listened")
 }
 
 func (dht *DistributedHashTable) id(target string) string {
