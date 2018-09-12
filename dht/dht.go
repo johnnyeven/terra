@@ -1,22 +1,22 @@
-package spider
+package dht
 
 import (
 	"net"
 	"github.com/sirupsen/logrus"
-	"git.profzone.net/terra/transport/krpc"
-	"fmt"
 	"github.com/ethereum/go-ethereum/p2p/nat"
+	"git.profzone.net/terra/transport"
 )
 
 type DistributedHashTable struct {
 	Network       string
 	LocalAddr     string
 	SeedNodes     []string
-	conn          *net.UDPConn
+	conn          *transport.Transport
 	nat           nat.Interface
 	self          *node
-	packetChannel chan krpc.Packet
+	packetChannel chan transport.Packet
 	quitChannel   chan struct{}
+	Handler       func(table *DistributedHashTable, packet transport.Packet)
 }
 
 func (dht *DistributedHashTable) Run() {
@@ -27,17 +27,9 @@ func (dht *DistributedHashTable) Run() {
 	for {
 		select {
 		case packet := <-dht.packetChannel:
-			data, err := Decode(packet.Data)
-			if err != nil {
-				logrus.Errorf("Decode err: %v", err)
-			}
-
-			response, err := krpc.ParseMessage(data)
-			if err != nil {
-				logrus.Errorf("ParseMessage err: %v", err)
-			}
-
-			fmt.Println(response)
+			dht.Handler(dht, packet)
+		case <-dht.quitChannel:
+			dht.conn.Close()
 		}
 	}
 }
@@ -48,9 +40,9 @@ func (dht *DistributedHashTable) init() {
 		logrus.Panicf("[DistributedHashTable].init net.ListenPacket err: %v", err)
 	}
 
-	dht.conn = listener.(*net.UDPConn)
+	dht.conn = transport.NewKRPCTransport(listener.(*net.UDPConn))
 	dht.nat = nat.Any()
-	dht.packetChannel = make(chan krpc.Packet)
+	dht.packetChannel = make(chan transport.Packet)
 	dht.quitChannel = make(chan struct{})
 
 	dht.self, err = newNode(randomString(20), dht.Network, dht.LocalAddr)
@@ -73,32 +65,23 @@ func (dht *DistributedHashTable) join() {
 			"target": dht.self.id.RawString(),
 		}
 
-		count, err := dht.conn.WriteToUDP([]byte(Encode(data)), udpAddr)
+		request := dht.conn.MakeRequest("find_node", data, udpAddr)
+		err = dht.conn.Request(request)
 		if err != nil {
 			logrus.Warningf("[DistributedHashTable].join dht.conn.WriteToUDP err: %v", err)
 		}
-		logrus.Infof("send %d", count)
+		logrus.Info("send")
 	}
 }
 
 func (dht *DistributedHashTable) listen() {
-	realaddr := dht.conn.LocalAddr().(*net.UDPAddr)
+	realAddr := dht.conn.LocalAddr().(*net.UDPAddr)
 	if dht.nat != nil {
-		if !realaddr.IP.IsLoopback() {
-			go nat.Map(dht.nat, dht.quitChannel, "udp", realaddr.Port, realaddr.Port, "terra discovery")
+		if !realAddr.IP.IsLoopback() {
+			go nat.Map(dht.nat, dht.quitChannel, "udp4", realAddr.Port, realAddr.Port, "terra discovery")
 		}
 	}
-	go func() {
-		buff := make([]byte, 8192)
-		for {
-			n, raddr, err := dht.conn.ReadFromUDP(buff)
-			if err != nil {
-				continue
-			}
-
-			dht.packetChannel <- krpc.Packet{buff[:n], raddr}
-		}
-	}()
+	go dht.conn.Receive(dht.packetChannel)
 	logrus.Info("listened")
 }
 

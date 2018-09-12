@@ -1,4 +1,4 @@
-package spider
+package transport
 
 import (
 	"bytes"

@@ -1,13 +1,85 @@
-package krpc
+package transport
 
 import (
 	"net"
 	"errors"
+	"github.com/sirupsen/logrus"
+	"time"
 )
 
 type Packet struct {
 	Data  []byte
 	Raddr *net.UDPAddr
+}
+
+var _ interface {
+	TransportDriver
+} = (*krpcClient)(nil)
+
+type krpcClient struct {
+	conn *net.UDPConn
+}
+
+func (c *krpcClient) MakeRequest(requestType string, data map[string]interface{}, target net.Addr) *Request {
+	params := MakeQuery("1", requestType, data)
+	return &Request{
+		cmd:        requestType,
+		data:       params,
+		remoteAddr: target,
+	}
+}
+
+func (c *krpcClient) Request(request *Request) error {
+	_, err := c.conn.WriteToUDP([]byte(Encode(request.data)), request.remoteAddr.(*net.UDPAddr))
+	if err != nil {
+		logrus.Warningf("[krpcClient].Request c.conn.WriteToUDP err: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (c *krpcClient) Receive(receiveChannel chan Packet) {
+	buff := make([]byte, 8192)
+	for {
+		n, raddr, err := c.conn.ReadFromUDP(buff)
+		if err != nil {
+			continue
+		}
+
+		receiveChannel <- Packet{buff[:n], raddr}
+	}
+}
+
+func (c *krpcClient) Read(b []byte) (n int, err error) {
+	return c.conn.Read(b)
+}
+
+func (c *krpcClient) Write(b []byte) (n int, err error) {
+	return c.conn.Write(b)
+}
+
+func (c *krpcClient) Close() error {
+	return c.conn.Close()
+}
+
+func (c *krpcClient) LocalAddr() net.Addr {
+	return c.conn.LocalAddr()
+}
+
+func (c *krpcClient) RemoteAddr() net.Addr {
+	return c.conn.RemoteAddr()
+}
+
+func (c *krpcClient) SetDeadline(time time.Time) error {
+	return c.conn.SetDeadline(time)
+}
+
+func (c *krpcClient) SetReadDeadline(time time.Time) error {
+	return c.conn.SetReadDeadline(time)
+}
+
+func (c *krpcClient) SetWriteDeadline(time time.Time) error {
+	return c.conn.SetWriteDeadline(time)
 }
 
 func ParseMessage(data interface{}) (map[string]interface{}, error) {

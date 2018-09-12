@@ -19,6 +19,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/sirupsen/logrus"
 	"git.profzone.net/terra/spider"
+	"git.profzone.net/terra/dht"
 )
 
 var (
@@ -31,7 +32,7 @@ var RootCmd = &cobra.Command{
 	Use:   "terra",
 	Short: "A P2P demo application",
 	Run: func(cmd *cobra.Command, args []string) {
-		dht := spider.DistributedHashTable{
+		table := dht.DistributedHashTable{
 			Network:   "udp4",
 			LocalAddr: ":6881",
 			SeedNodes: []string{
@@ -39,8 +40,9 @@ var RootCmd = &cobra.Command{
 				"router.utorrent.com:6881",
 				"dht.transmissionbt.com:6881",
 			},
+			Handler: spider.BTHandlePacket,
 		}
-		dht.Run()
+		table.Run()
 	},
 }
 
