@@ -4,19 +4,20 @@ import (
 	"net"
 	"github.com/sirupsen/logrus"
 	"github.com/ethereum/go-ethereum/p2p/nat"
-	"git.profzone.net/terra/transport"
+	"math"
 )
 
 type DistributedHashTable struct {
-	Network       string
-	LocalAddr     string
-	SeedNodes     []string
-	conn          *transport.Transport
-	nat           nat.Interface
-	self          *node
-	packetChannel chan transport.Packet
-	quitChannel   chan struct{}
-	Handler       func(table *DistributedHashTable, packet transport.Packet)
+	Network            string
+	LocalAddr          string
+	SeedNodes          []string
+	conn               *Transport
+	transactionManager *transactionManager
+	nat                nat.Interface
+	self               *Node
+	packetChannel      chan Packet
+	quitChannel        chan struct{}
+	Handler            func(table *DistributedHashTable, packet Packet)
 }
 
 func (dht *DistributedHashTable) Run() {
@@ -34,20 +35,31 @@ func (dht *DistributedHashTable) Run() {
 	}
 }
 
+func (dht *DistributedHashTable) GetConn() *Transport {
+	return dht.conn
+}
+
+func (dht *DistributedHashTable) GetTransactionManager() *transactionManager {
+	return dht.transactionManager
+}
+
 func (dht *DistributedHashTable) init() {
 	listener, err := net.ListenPacket(dht.Network, dht.LocalAddr)
 	if err != nil {
 		logrus.Panicf("[DistributedHashTable].init net.ListenPacket err: %v", err)
 	}
 
-	dht.conn = transport.NewKRPCTransport(listener.(*net.UDPConn))
+	dht.conn = NewKRPCTransport(dht, listener.(*net.UDPConn))
+	go dht.conn.Run()
+
+	dht.transactionManager = newTransactionManager(math.MaxUint64)
 	dht.nat = nat.Any()
-	dht.packetChannel = make(chan transport.Packet)
+	dht.packetChannel = make(chan Packet)
 	dht.quitChannel = make(chan struct{})
 
-	dht.self, err = newNode(randomString(20), dht.Network, dht.LocalAddr)
+	dht.self, err = NewNode(randomString(20), dht.Network, dht.LocalAddr)
 	if err != nil {
-		logrus.Panicf("[DistributedHashTable].init newNode err: %v", err)
+		logrus.Panicf("[DistributedHashTable].init NewNode err: %v", err)
 	}
 	logrus.Info("initialized")
 }
@@ -66,10 +78,7 @@ func (dht *DistributedHashTable) join() {
 		}
 
 		request := dht.conn.MakeRequest("find_node", data, udpAddr)
-		err = dht.conn.Request(request)
-		if err != nil {
-			logrus.Warningf("[DistributedHashTable].join dht.conn.WriteToUDP err: %v", err)
-		}
+		dht.conn.Request(request)
 		logrus.Info("send")
 	}
 }

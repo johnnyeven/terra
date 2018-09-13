@@ -1,4 +1,4 @@
-package transport
+package dht
 
 import (
 	"bytes"

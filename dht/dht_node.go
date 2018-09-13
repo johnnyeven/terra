@@ -5,14 +5,14 @@ import (
 	"errors"
 )
 
-type node struct {
+type Node struct {
 	id   *identity
 	addr *net.UDPAddr
 }
 
-func newNode(id, network, address string) (*node, error) {
+func NewNode(id, network, address string) (*Node, error) {
 	if len(id) != 20 {
-		return nil, errors.New("node id should be a 20-length string")
+		return nil, errors.New("Node id should be a 20-length string")
 	}
 
 	addr, err := net.ResolveUDPAddr(network, address)
@@ -20,5 +20,5 @@ func newNode(id, network, address string) (*node, error) {
 		return nil, err
 	}
 
-	return &node{newIdentityFromString(id), addr}, nil
+	return &Node{newIdentityFromString(id), addr}, nil
 }

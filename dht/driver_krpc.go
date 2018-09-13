@@ -1,4 +1,4 @@
-package transport
+package dht
 
 import (
 	"net"
@@ -7,38 +7,62 @@ import (
 	"time"
 )
 
-type Packet struct {
-	Data  []byte
-	Raddr *net.UDPAddr
-}
+const (
+	PingType         = "ping"
+	FindNodeType     = "find_node"
+	GetPeersType     = "get_peers"
+	AnnouncePeerType = "announce_peer"
+)
 
 var _ interface {
 	TransportDriver
-} = (*krpcClient)(nil)
+} = (*KRPCClient)(nil)
 
-type krpcClient struct {
+type KRPCClient struct {
 	conn *net.UDPConn
+	dht  *DistributedHashTable
 }
 
-func (c *krpcClient) MakeRequest(requestType string, data map[string]interface{}, target net.Addr) *Request {
-	params := MakeQuery("1", requestType, data)
+func (c *KRPCClient) MakeRequest(requestType string, data map[string]interface{}, target net.Addr) *Request {
+	params := MakeQuery(c.dht.transactionManager.generateTranID(), requestType, data)
 	return &Request{
 		cmd:        requestType,
-		data:       params,
+		Data:       params,
 		remoteAddr: target,
 	}
 }
 
-func (c *krpcClient) Request(request *Request) error {
-	_, err := c.conn.WriteToUDP([]byte(Encode(request.data)), request.remoteAddr.(*net.UDPAddr))
-	if err != nil {
-		logrus.Warningf("[krpcClient].Request c.conn.WriteToUDP err: %v", err)
-		return err
+func (c *KRPCClient) Request(request *Request) {}
+
+func (c *KRPCClient) sendRequest(request *Request, retry int) {
+	tranID := request.Data["t"].(string)
+	tran := c.dht.transactionManager.newTransaction(tranID, request, retry)
+	c.dht.transactionManager.insertTransaction(tran)
+	defer c.dht.transactionManager.deleteTransaction(tran.id)
+
+	success := false
+	for i := 0; i < retry; i++ {
+		_, err := c.conn.WriteToUDP([]byte(Encode(request.Data)), request.remoteAddr.(*net.UDPAddr))
+		if err != nil {
+			logrus.Warningf("[KRPCClient].Request c.conn.WriteToUDP err: %v", err)
+			break
+		}
+
+		select {
+		case <-tran.ResponseChannel:
+			success = true
+			break
+		case <-time.After(time.Second * 15):
+			logrus.Warningf("[KRPCClient].Request c.conn.WriteToUDP retry %d", i+1)
+		}
 	}
-	return nil
+
+	if !success {
+
+	}
 }
 
-func (c *krpcClient) Receive(receiveChannel chan Packet) {
+func (c *KRPCClient) Receive(receiveChannel chan Packet) {
 	buff := make([]byte, 8192)
 	for {
 		n, raddr, err := c.conn.ReadFromUDP(buff)
@@ -50,35 +74,35 @@ func (c *krpcClient) Receive(receiveChannel chan Packet) {
 	}
 }
 
-func (c *krpcClient) Read(b []byte) (n int, err error) {
+func (c *KRPCClient) Read(b []byte) (n int, err error) {
 	return c.conn.Read(b)
 }
 
-func (c *krpcClient) Write(b []byte) (n int, err error) {
+func (c *KRPCClient) Write(b []byte) (n int, err error) {
 	return c.conn.Write(b)
 }
 
-func (c *krpcClient) Close() error {
+func (c *KRPCClient) Close() error {
 	return c.conn.Close()
 }
 
-func (c *krpcClient) LocalAddr() net.Addr {
+func (c *KRPCClient) LocalAddr() net.Addr {
 	return c.conn.LocalAddr()
 }
 
-func (c *krpcClient) RemoteAddr() net.Addr {
+func (c *KRPCClient) RemoteAddr() net.Addr {
 	return c.conn.RemoteAddr()
 }
 
-func (c *krpcClient) SetDeadline(time time.Time) error {
+func (c *KRPCClient) SetDeadline(time time.Time) error {
 	return c.conn.SetDeadline(time)
 }
 
-func (c *krpcClient) SetReadDeadline(time time.Time) error {
+func (c *KRPCClient) SetReadDeadline(time time.Time) error {
 	return c.conn.SetReadDeadline(time)
 }
 
-func (c *krpcClient) SetWriteDeadline(time time.Time) error {
+func (c *KRPCClient) SetWriteDeadline(time time.Time) error {
 	return c.conn.SetWriteDeadline(time)
 }
 
