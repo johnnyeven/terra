@@ -12,7 +12,7 @@ type Node struct {
 
 func NewNode(id, network, address string) (*Node, error) {
 	if len(id) != 20 {
-		return nil, errors.New("node id should be a 20-length string")
+		return nil, errors.New("node ID should be a 20-length string")
 	}
 
 	addr, err := net.ResolveUDPAddr(network, address)

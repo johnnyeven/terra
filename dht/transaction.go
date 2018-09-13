@@ -69,10 +69,10 @@ func (c *transactionManager) GetByTranID(tranID string) *transaction {
 
 func (c *transactionManager) FindNode(no *Node, target string) {
 	data := map[string]interface{}{
-		"id":     c.dht.id(target),
+		"ID":     c.dht.ID(target),
 		"target": target,
 	}
 
-	request := c.dht.conn.MakeRequest(no, "find_node", data)
+	request := c.dht.conn.MakeRequest(no.ID, no.addr, "find_node", data)
 	c.dht.conn.Request(request)
 }

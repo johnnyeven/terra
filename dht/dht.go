@@ -14,7 +14,7 @@ type DistributedHashTable struct {
 	conn               *Transport
 	transactionManager *transactionManager
 	nat                nat.Interface
-	self               *Node
+	Self               *Node
 	packetChannel      chan Packet
 	quitChannel        chan struct{}
 	Handler            func(table *DistributedHashTable, packet Packet)
@@ -57,7 +57,7 @@ func (dht *DistributedHashTable) init() {
 	dht.packetChannel = make(chan Packet)
 	dht.quitChannel = make(chan struct{})
 
-	dht.self, err = NewNode(randomString(20), dht.Network, dht.LocalAddr)
+	dht.Self, err = NewNode(randomString(20), dht.Network, dht.LocalAddr)
 	if err != nil {
 		logrus.Panicf("[DistributedHashTable].init NewNode err: %v", err)
 	}
@@ -72,7 +72,7 @@ func (dht *DistributedHashTable) join() {
 			continue
 		}
 
-		dht.transactionManager.FindNode(&Node{addr: udpAddr}, dht.self.ID.RawString())
+		dht.transactionManager.FindNode(&Node{addr: udpAddr}, dht.Self.ID.RawString())
 		logrus.Info("send")
 	}
 }
@@ -88,9 +88,9 @@ func (dht *DistributedHashTable) listen() {
 	logrus.Info("listened")
 }
 
-func (dht *DistributedHashTable) id(target string) string {
+func (dht *DistributedHashTable) ID(target string) string {
 	if target == "" {
-		return dht.self.ID.RawString()
+		return dht.Self.ID.RawString()
 	}
-	return target[:15] + dht.self.ID.RawString()[15:]
+	return target[:15] + dht.Self.ID.RawString()[15:]
 }

@@ -14,6 +14,10 @@ var _ interface {
 	TransportDriver
 } = (*Transport)(nil)
 
+func (t *Transport) GetClient() TransportDriver {
+	return t.client
+}
+
 func (t *Transport) Run() {
 	for {
 		select {
@@ -32,8 +36,16 @@ func (t *Transport) Init(client TransportDriver) {
 	t.requestChannel = make(chan *Request)
 }
 
-func (t *Transport) MakeRequest(node *Node, requestType string, data map[string]interface{}) *Request {
-	return t.client.MakeRequest(node, requestType, data)
+func (t *Transport) MakeRequest(id *Identity, remoteAddr net.Addr, requestType string, data map[string]interface{}) *Request {
+	return t.client.MakeRequest(id, remoteAddr, requestType, data)
+}
+
+func (t *Transport) MakeResponse(remoteAddr net.Addr, tranID string, data map[string]interface{}) *Request {
+	return t.client.MakeResponse(remoteAddr, tranID, data)
+}
+
+func (t *Transport) MakeError(remoteAddr net.Addr, tranID string, errCode int, errMsg string) *Request {
+	return t.client.MakeError(remoteAddr, tranID, errCode, errMsg)
 }
 
 func (t *Transport) Request(request *Request) {

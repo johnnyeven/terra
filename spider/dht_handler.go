@@ -33,11 +33,46 @@ var handlers = map[string]dhtHandler{
 }
 
 func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[string]interface{}) bool {
-	fmt.Println(data)
+	fmt.Printf("handled request %s\n", data)
+
+	tranID := data["t"].(string)
+
+	if err := dht.ParseKeys(data, [][]string{{"q", "string"}, {"a", "map"}}); err != nil {
+		errResponse := table.GetConn().MakeError(addr, tranID, dht.ProtocolError, err.Error())
+		table.GetConn().GetClient().(*dht.KRPCClient).Send(errResponse)
+		return false
+	}
+
+	q := data["q"].(string)
+	a := data["a"].(map[string]interface{})
+
+	id := a["id"].(string)
+	if id == table.Self.ID.RawString() {
+		return false
+	}
+
+	if len(id) != 20 {
+		errResponse := table.GetConn().MakeError(addr, tranID, dht.ProtocolError, "invalid id length")
+		table.GetConn().GetClient().(*dht.KRPCClient).Send(errResponse)
+		return false
+	}
+
+	switch q {
+	case dht.PingType:
+		response := table.GetConn().MakeResponse(addr, tranID, map[string]interface{}{"id": table.ID(id)})
+		table.GetConn().GetClient().(*dht.KRPCClient).Send(response)
+	case dht.FindNodeType:
+	case dht.GetPeersType:
+	case dht.AnnouncePeerType:
+
+	}
+
 	return true
 }
 
 func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[string]interface{}) bool {
+	fmt.Printf("handled response %s\n", data)
+
 	tranID := data["t"].(string)
 	tran := table.GetTransactionManager().GetByTranID(tranID)
 	if tran == nil {
@@ -89,7 +124,7 @@ func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map
 }
 
 func handleError(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[string]interface{}) bool {
-	fmt.Println(data)
+	fmt.Printf("handled error %s\n", data)
 	return true
 }
 
@@ -98,7 +133,7 @@ func findOrContinueRequestTarget(table *dht.DistributedHashTable, targetID *dht.
 		return err
 	}
 	nodes := data["nodes"].(string)
-	if len(nodes) % 26 != 0 {
+	if len(nodes)%26 != 0 {
 		return errors.New("the length of nodes should can be divided by 26")
 	}
 

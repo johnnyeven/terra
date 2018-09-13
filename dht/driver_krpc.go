@@ -14,6 +14,13 @@ const (
 	AnnouncePeerType = "announce_peer"
 )
 
+const (
+	GeneralError = 201 + iota
+	ServerError
+	ProtocolError
+	UnknownError
+)
+
 var _ interface {
 	TransportDriver
 } = (*KRPCClient)(nil)
@@ -23,13 +30,29 @@ type KRPCClient struct {
 	dht  *DistributedHashTable
 }
 
-func (c *KRPCClient) MakeRequest(node *Node, requestType string, data map[string]interface{}) *Request {
+func (c *KRPCClient) MakeRequest(id *Identity, remoteAddr net.Addr, requestType string, data map[string]interface{}) *Request {
 	params := MakeQuery(c.dht.transactionManager.generateTranID(), requestType, data)
 	return &Request{
-		ClientID:   node.ID,
+		ClientID:   id,
 		cmd:        requestType,
 		Data:       params,
-		remoteAddr: node.addr,
+		remoteAddr: remoteAddr,
+	}
+}
+
+func (c *KRPCClient) MakeResponse(remoteAddr net.Addr, tranID string, data map[string]interface{}) *Request {
+	params := MakeResponse(tranID, data)
+	return &Request{
+		Data:       params,
+		remoteAddr: remoteAddr,
+	}
+}
+
+func (c *KRPCClient) MakeError(remoteAddr net.Addr, tranID string, errCode int, errMsg string) *Request {
+	params := MakeError(tranID, errCode, errMsg)
+	return &Request{
+		Data:       params,
+		remoteAddr: remoteAddr,
 	}
 }
 
@@ -43,7 +66,7 @@ func (c *KRPCClient) sendRequest(request *Request, retry int) {
 
 	success := false
 	for i := 0; i < retry; i++ {
-		_, err := c.conn.WriteToUDP([]byte(Encode(request.Data)), request.remoteAddr.(*net.UDPAddr))
+		err := c.Send(request)
 		if err != nil {
 			logrus.Warningf("[KRPCClient].Request c.conn.WriteToUDP err: %v", err)
 			break
@@ -61,6 +84,17 @@ func (c *KRPCClient) sendRequest(request *Request, retry int) {
 	if !success {
 
 	}
+}
+
+func (c *KRPCClient) Send(request *Request) error {
+	count, err := c.conn.WriteToUDP([]byte(Encode(request.Data)), request.remoteAddr.(*net.UDPAddr))
+	if err != nil {
+		return err
+	}
+
+	logrus.Debugf("[KRPCClient].Sent %d bytes", count)
+
+	return nil
 }
 
 func (c *KRPCClient) Receive(receiveChannel chan Packet) {
