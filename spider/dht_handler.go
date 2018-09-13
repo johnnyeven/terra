@@ -33,8 +33,6 @@ var handlers = map[string]dhtHandler{
 }
 
 func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[string]interface{}) bool {
-	fmt.Printf("handled request %s\n", data)
-
 	tranID := data["t"].(string)
 
 	if err := dht.ParseKeys(data, [][]string{{"q", "string"}, {"a", "map"}}); err != nil {
@@ -59,6 +57,7 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 
 	switch q {
 	case dht.PingType:
+		logrus.Debug("ping request")
 		response := table.GetConn().MakeResponse(addr, tranID, map[string]interface{}{"id": table.ID(id)})
 		table.GetConn().GetClient().(*dht.KRPCClient).Send(response)
 	case dht.FindNodeType:
@@ -71,8 +70,6 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 }
 
 func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[string]interface{}) bool {
-	fmt.Printf("handled response %s\n", data)
-
 	tranID := data["t"].(string)
 	tran := table.GetTransactionManager().GetByTranID(tranID)
 	if tran == nil {
