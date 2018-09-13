@@ -71,7 +71,7 @@ func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map
 	case dht.PingType:
 		break
 	case dht.FindNodeType:
-		//fmt.Println("find_node response")
+		logrus.Debug("find_node response")
 		target := a["target"].(string)
 		if err := findOrContinueRequestTarget(table, dht.NewIdentityFromString(target), r, dht.FindNodeType); err != nil {
 			return false
@@ -110,6 +110,7 @@ func findOrContinueRequestTarget(table *dht.DistributedHashTable, targetID *dht.
 		}
 
 		hasNew = true
+		logrus.Debugf("new_node received, %x", []byte(node.ID.RawString()))
 	}
 	if found || !hasNew {
 		return nil
