@@ -52,7 +52,7 @@ func (dht *DistributedHashTable) init() {
 	dht.conn = NewKRPCTransport(dht, listener.(*net.UDPConn))
 	go dht.conn.Run()
 
-	dht.transactionManager = newTransactionManager(math.MaxUint64)
+	dht.transactionManager = newTransactionManager(dht, math.MaxUint64)
 	dht.nat = nat.Any()
 	dht.packetChannel = make(chan Packet)
 	dht.quitChannel = make(chan struct{})
@@ -72,13 +72,7 @@ func (dht *DistributedHashTable) join() {
 			continue
 		}
 
-		data := map[string]interface{}{
-			"id":     dht.id(dht.self.id.RawString()),
-			"target": dht.self.id.RawString(),
-		}
-
-		request := dht.conn.MakeRequest("find_node", data, udpAddr)
-		dht.conn.Request(request)
+		dht.transactionManager.FindNode(&Node{addr: udpAddr}, dht.self.ID.RawString())
 		logrus.Info("send")
 	}
 }
@@ -96,7 +90,7 @@ func (dht *DistributedHashTable) listen() {
 
 func (dht *DistributedHashTable) id(target string) string {
 	if target == "" {
-		return dht.self.id.RawString()
+		return dht.self.ID.RawString()
 	}
-	return target[:15] + dht.self.id.RawString()[15:]
+	return target[:15] + dht.self.ID.RawString()[15:]
 }

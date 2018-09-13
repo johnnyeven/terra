@@ -13,13 +13,15 @@ type transactionManager struct {
 	transactions map[string]*transaction
 	cursor       uint64
 	maxCursor    uint64
+	dht          *DistributedHashTable
 }
 
-func newTransactionManager(maxCursor uint64) *transactionManager {
+func newTransactionManager(dht *DistributedHashTable, maxCursor uint64) *transactionManager {
 	return &transactionManager{
 		RWMutex:      &sync.RWMutex{},
 		transactions: make(map[string]*transaction),
 		maxCursor:    maxCursor,
+		dht:          dht,
 	}
 }
 
@@ -63,4 +65,14 @@ func (c *transactionManager) transactionLength() int {
 
 func (c *transactionManager) GetByTranID(tranID string) *transaction {
 	return c.transactions[tranID]
+}
+
+func (c *transactionManager) FindNode(no *Node, target string) {
+	data := map[string]interface{}{
+		"id":     c.dht.id(target),
+		"target": target,
+	}
+
+	request := c.dht.conn.MakeRequest(no, "find_node", data)
+	c.dht.conn.Request(request)
 }

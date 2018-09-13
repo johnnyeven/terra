@@ -23,12 +23,13 @@ type KRPCClient struct {
 	dht  *DistributedHashTable
 }
 
-func (c *KRPCClient) MakeRequest(requestType string, data map[string]interface{}, target net.Addr) *Request {
+func (c *KRPCClient) MakeRequest(node *Node, requestType string, data map[string]interface{}) *Request {
 	params := MakeQuery(c.dht.transactionManager.generateTranID(), requestType, data)
 	return &Request{
+		ClientID:   node.ID,
 		cmd:        requestType,
 		Data:       params,
-		remoteAddr: target,
+		remoteAddr: node.addr,
 	}
 }
 

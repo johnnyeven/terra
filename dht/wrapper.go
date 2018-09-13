@@ -32,8 +32,8 @@ func (t *Transport) Init(client TransportDriver) {
 	t.requestChannel = make(chan *Request)
 }
 
-func (t *Transport) MakeRequest(requestType string, data map[string]interface{}, target net.Addr) *Request {
-	return t.client.MakeRequest(requestType, data, target)
+func (t *Transport) MakeRequest(node *Node, requestType string, data map[string]interface{}) *Request {
+	return t.client.MakeRequest(node, requestType, data)
 }
 
 func (t *Transport) Request(request *Request) {

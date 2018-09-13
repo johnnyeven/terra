@@ -6,23 +6,23 @@ import (
 	"strings"
 )
 
-type identity struct {
+type Identity struct {
 	Size int
 	data []byte
 }
 
-func (id *identity) Bit(index int) int {
+func (id *Identity) Bit(index int) int {
 	if index >= id.Size {
-		logrus.Panic("[identity].Bit err: index out of range")
+		logrus.Panic("[Identity].Bit err: index out of range")
 	}
 
 	div, mod := index/8, index%8
 	return int((uint(id.data[div]) & (1 << uint(7-mod))) >> uint(7-mod))
 }
 
-func (id *identity) set(index int, value int) {
+func (id *Identity) set(index int, value int) {
 	if index >= id.Size {
-		logrus.Panic("[identity].set err: index out of range")
+		logrus.Panic("[Identity].set err: index out of range")
 	}
 
 	div, mod := index/8, index%8
@@ -34,17 +34,17 @@ func (id *identity) set(index int, value int) {
 	}
 }
 
-func (id *identity) Set(index int) {
+func (id *Identity) Set(index int) {
 	id.set(index, 1)
 }
 
-func (id *identity) Unset(index int) {
+func (id *Identity) Unset(index int) {
 	id.set(index, 0)
 }
 
-func (id *identity) Compare(source *identity, prefixLen int) int {
+func (id *Identity) Compare(source *Identity, prefixLen int) int {
 	if prefixLen > id.Size || prefixLen > source.Size {
-		logrus.Panic("[identity].Compare err: index out of range")
+		logrus.Panic("[Identity].Compare err: index out of range")
 	}
 
 	div, mod := prefixLen/8, prefixLen%8
@@ -68,9 +68,9 @@ func (id *identity) Compare(source *identity, prefixLen int) int {
 	return 0
 }
 
-func (id *identity) Xor(source *identity) *identity {
+func (id *Identity) Xor(source *Identity) *Identity {
 	if id.Size != source.Size {
-		logrus.Panic("[identity].Xor err: size not the same")
+		logrus.Panic("[Identity].Xor err: size not the same")
 	}
 
 	distance := newIdentity(id.Size)
@@ -87,7 +87,7 @@ func (id *identity) Xor(source *identity) *identity {
 	return distance
 }
 
-func (id *identity) String() string {
+func (id *Identity) String() string {
 	div, mod := id.Size/8, id.Size%8
 	buff := make([]string, div+mod)
 
@@ -102,11 +102,11 @@ func (id *identity) String() string {
 	return strings.Join(buff, "")
 }
 
-func (id *identity) RawString() string {
+func (id *Identity) RawString() string {
 	return string(id.data)
 }
 
-func newIdentity(size int) *identity {
+func newIdentity(size int) *Identity {
 	div := size / 8
 	mod := size % 8
 
@@ -114,13 +114,13 @@ func newIdentity(size int) *identity {
 		div++
 	}
 
-	return &identity{
+	return &Identity{
 		Size: size,
 		data: make([]byte, div),
 	}
 }
 
-func newIdentityCopy(source *identity, size int) *identity {
+func NewIdentityCopy(source *Identity, size int) *Identity {
 	target := newIdentity(size)
 
 	if size > source.Size {
@@ -142,13 +142,13 @@ func newIdentityCopy(source *identity, size int) *identity {
 	return target
 }
 
-func newIdentityFromBytes(data []byte) *identity {
+func NewIdentityFromBytes(data []byte) *Identity {
 	target := newIdentity(len(data) * 8)
 	copy(target.data, data)
 
 	return target
 }
 
-func newIdentityFromString(data string) *identity {
-	return newIdentityFromBytes([]byte(data))
+func NewIdentityFromString(data string) *Identity {
+	return NewIdentityFromBytes([]byte(data))
 }
