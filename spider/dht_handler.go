@@ -19,6 +19,10 @@ func BTHandlePacket(table *dht.DistributedHashTable, packet dht.Packet) {
 		logrus.Errorf("ParseMessage err: %v", err)
 	}
 
+	if err := dht.ParseKey(response, "y", "string"); err != nil {
+		return
+	}
+
 	if handler, ok := handlers[response["y"].(string)]; ok {
 		handler(table, packet.RemoteAddr, response)
 	}
@@ -123,8 +127,6 @@ func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map
 }
 
 func handleError(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[string]interface{}) bool {
-	fmt.Printf("handled error %s\n", data)
-
 	if err := dht.ParseKey(data, "e", "list"); err != nil {
 		return false
 	}
@@ -136,7 +138,7 @@ func handleError(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[st
 
 	if tran := table.GetTransactionManager().Get(data["t"].(string), addr); tran != nil {
 		tran.ResponseChannel <- struct{}{}
-		logrus.Errorf("errCode: %d, errMsg: %s", e[0].(int), e[1].(string))
+		logrus.Errorf("handled error errCode: %d, errMsg: %s", e[0].(int), e[1].(string))
 	}
 	return true
 }
