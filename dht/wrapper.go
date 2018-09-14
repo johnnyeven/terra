@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const RequestRetryTime = 2
+
 type Transport struct {
 	client         TransportDriver
 	requestChannel chan *Request
@@ -22,7 +24,7 @@ func (t *Transport) Run() {
 	for {
 		select {
 		case r := <-t.requestChannel:
-			go t.sendRequest(r, 5)
+			go t.sendRequest(r, RequestRetryTime)
 		}
 	}
 }

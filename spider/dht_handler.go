@@ -71,7 +71,7 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 
 func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[string]interface{}) bool {
 	tranID := data["t"].(string)
-	tran := table.GetTransactionManager().GetByTranID(tranID)
+	tran := table.GetTransactionManager().Get(tranID, addr)
 	if tran == nil {
 		return false
 	}
@@ -90,11 +90,11 @@ func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map
 	id := r["id"].(string)
 
 	if tran.ClientID != nil && tran.ClientID.RawString() != r["id"].(string) {
-		// remove
+		table.GetRoutingTable().RemoveByAddr(addr.String())
 		return false
 	}
 
-	_, err := dht.NewNode(id, addr.Network(), addr.String())
+	node, err := dht.NewNode(id, addr.Network(), addr.String())
 	if err != nil {
 		return false
 	}
@@ -117,11 +117,27 @@ func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map
 	}
 
 	tran.ResponseChannel <- struct{}{}
+	table.GetRoutingTable().Insert(node)
+
 	return true
 }
 
 func handleError(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[string]interface{}) bool {
 	fmt.Printf("handled error %s\n", data)
+
+	if err := dht.ParseKey(data, "e", "list"); err != nil {
+		return false
+	}
+
+	var e []interface{}
+	if e = data["e"].([]interface{}); len(e) != 2 {
+		return false
+	}
+
+	if tran := table.GetTransactionManager().Get(data["t"].(string), addr); tran != nil {
+		tran.ResponseChannel <- struct{}{}
+		logrus.Errorf("errCode: %d, errMsg: %s", e[0].(int), e[1].(string))
+	}
 	return true
 }
 
@@ -141,11 +157,24 @@ func findOrContinueRequestTarget(table *dht.DistributedHashTable, targetID *dht.
 			found = true
 		}
 
-		hasNew = true
+		if table.GetRoutingTable().Insert(node) {
+			hasNew = true
+		}
 		logrus.Debugf("new_node received, %x", []byte(node.ID.RawString()))
 	}
 	if found || !hasNew {
 		return nil
+	}
+
+	id := targetID.RawString()
+	for _, node := range table.GetRoutingTable().GetNeighbors(targetID, table.K) {
+		switch requestType {
+		case dht.FindNodeType:
+			table.GetTransactionManager().FindNode(node, id)
+		case dht.GetPeersType:
+		default:
+			logrus.Panicf("[findOrContinueRequestTarget] err: invalid request type: %s", requestType)
+		}
 	}
 
 	return nil

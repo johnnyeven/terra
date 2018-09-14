@@ -66,6 +66,7 @@ func (c *KRPCClient) sendRequest(request *Request, retry int) {
 
 	success := false
 	for i := 0; i < retry; i++ {
+		logrus.Warningf("[KRPCClient].Request c.conn.WriteToUDP try %d", i+1)
 		err := c.Send(request)
 		if err != nil {
 			logrus.Warningf("[KRPCClient].Request c.conn.WriteToUDP err: %v", err)
@@ -77,12 +78,11 @@ func (c *KRPCClient) sendRequest(request *Request, retry int) {
 			success = true
 			break
 		case <-time.After(time.Second * 15):
-			logrus.Warningf("[KRPCClient].Request c.conn.WriteToUDP retry %d", i+1)
 		}
 	}
 
 	if !success {
-
+		c.dht.GetRoutingTable().RemoveByAddr(request.remoteAddr.String())
 	}
 }
 

@@ -20,6 +20,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"git.profzone.net/terra/spider"
 	"git.profzone.net/terra/dht"
+	"time"
+	"math"
 )
 
 var (
@@ -33,13 +35,22 @@ var RootCmd = &cobra.Command{
 	Short: "A P2P demo application",
 	Run: func(cmd *cobra.Command, args []string) {
 		table := dht.DistributedHashTable{
-			Network:   "udp4",
-			LocalAddr: ":6881",
+			KBucketExpiredAfter:  0,
+			NodeExpriedAfter:     0,
+			CheckKBucketPeriod:   5 * time.Second,
+			MaxTransactionCursor: math.MaxUint32,
+			MaxNodes:             5000,
+			K:                    8,
+			KBucketSize:          math.MaxInt32,
+			RefreshNodeNum:       256,
+			Network:              "udp4",
+			LocalAddr:            ":6881",
 			SeedNodes: []string{
 				"router.bittorrent.com:6881",
 				"router.utorrent.com:6881",
 				"dht.transmissionbt.com:6881",
 			},
+			Self:    nil,
 			Handler: spider.BTHandlePacket,
 		}
 		table.Run()

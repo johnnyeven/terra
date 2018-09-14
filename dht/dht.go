@@ -4,14 +4,33 @@ import (
 	"net"
 	"github.com/sirupsen/logrus"
 	"github.com/ethereum/go-ethereum/p2p/nat"
-	"math"
+	"time"
 )
 
 type DistributedHashTable struct {
+	// the kbucket expired duration
+	KBucketExpiredAfter time.Duration
+	// the node expired duration
+	NodeExpriedAfter time.Duration
+	// how long it checks whether the bucket is expired
+	CheckKBucketPeriod time.Duration
+	// the max transaction id
+	MaxTransactionCursor uint64
+	// how many nodes routing table can hold
+	MaxNodes int
+	// in mainline dht, k = 8
+	K int
+	// for crawling mode, we put all nodes in one bucket, so KBucketSize may
+	// not be K
+	KBucketSize int
+	// the nodes num to be fresh in a kbucket
+	RefreshNodeNum int
+
 	Network            string
 	LocalAddr          string
 	SeedNodes          []string
 	conn               *Transport
+	routingTable       *routingTable
 	transactionManager *transactionManager
 	nat                nat.Interface
 	Self               *Node
@@ -25,10 +44,18 @@ func (dht *DistributedHashTable) Run() {
 	dht.listen()
 	dht.join()
 
+	tick := time.Tick(dht.CheckKBucketPeriod)
+
 	for {
 		select {
 		case packet := <-dht.packetChannel:
 			dht.Handler(dht, packet)
+		case <-tick:
+			if dht.routingTable.Len() == 0 {
+				dht.join()
+			} else if dht.transactionManager.transactionLength() == 0 {
+				go dht.routingTable.Fresh()
+			}
 		case <-dht.quitChannel:
 			dht.conn.Close()
 		}
@@ -43,6 +70,10 @@ func (dht *DistributedHashTable) GetTransactionManager() *transactionManager {
 	return dht.transactionManager
 }
 
+func (dht *DistributedHashTable) GetRoutingTable() *routingTable {
+	return dht.routingTable
+}
+
 func (dht *DistributedHashTable) init() {
 	listener, err := net.ListenPacket(dht.Network, dht.LocalAddr)
 	if err != nil {
@@ -52,7 +83,8 @@ func (dht *DistributedHashTable) init() {
 	dht.conn = NewKRPCTransport(dht, listener.(*net.UDPConn))
 	go dht.conn.Run()
 
-	dht.transactionManager = newTransactionManager(dht, math.MaxUint64)
+	dht.transactionManager = newTransactionManager(dht, dht.MaxTransactionCursor)
+	dht.routingTable = newRoutingTable(dht.KBucketSize, dht)
 	dht.nat = nat.Any()
 	dht.packetChannel = make(chan Packet)
 	dht.quitChannel = make(chan struct{})
@@ -73,7 +105,6 @@ func (dht *DistributedHashTable) join() {
 		}
 
 		dht.transactionManager.FindNode(&Node{addr: udpAddr}, dht.Self.ID.RawString())
-		logrus.Info("send")
 	}
 }
 

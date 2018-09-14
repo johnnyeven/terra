@@ -3,11 +3,25 @@ package dht
 import (
 	"net"
 	"errors"
+	"time"
+	"strings"
 )
 
 type Node struct {
-	ID   *Identity
-	addr *net.UDPAddr
+	ID             *Identity
+	addr           *net.UDPAddr
+	LastActiveTime time.Time
+}
+
+func (node *Node) CompactNodeInfo() string {
+	return strings.Join([]string{
+		node.ID.RawString(), node.CompactIPPortInfo(),
+	}, "")
+}
+
+func (node *Node) CompactIPPortInfo() string {
+	info, _ := encodeCompactIPPortInfo(node.addr.IP, node.addr.Port)
+	return info
 }
 
 func NewNode(id, network, address string) (*Node, error) {
@@ -20,7 +34,7 @@ func NewNode(id, network, address string) (*Node, error) {
 		return nil, err
 	}
 
-	return &Node{NewIdentityFromString(id), addr}, nil
+	return &Node{NewIdentityFromString(id), addr, time.Now()}, nil
 }
 
 func NewNodeFromCompactInfo(compactNodeInfo string, network string) (*Node, error) {
