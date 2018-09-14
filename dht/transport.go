@@ -17,6 +17,7 @@ type transaction struct {
 }
 
 type Transport struct {
+	TransportDriver
 	*sync.RWMutex
 	transactions   *syncedMap
 	index          *syncedMap
