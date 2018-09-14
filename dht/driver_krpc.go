@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	"time"
+	"git.profzone.net/terra/dht/util"
 )
 
 const (
@@ -30,8 +31,18 @@ type KRPCClient struct {
 	dht  *DistributedHashTable
 }
 
+func NewKRPCTransport(dht *DistributedHashTable, conn *net.UDPConn, maxCursor uint64) *Transport {
+	trans := &Transport{}
+	trans.Init(dht, &KRPCClient{
+		dht:  dht,
+		conn: conn,
+	}, maxCursor)
+
+	return trans
+}
+
 func (c *KRPCClient) MakeRequest(id *Identity, remoteAddr net.Addr, requestType string, data map[string]interface{}) *Request {
-	params := MakeQuery(c.dht.transactionManager.generateTranID(), requestType, data)
+	params := MakeQuery(c.dht.transport.generateTranID(), requestType, data)
 	return &Request{
 		ClientID:   id,
 		cmd:        requestType,
@@ -60,9 +71,9 @@ func (c *KRPCClient) Request(request *Request) {}
 
 func (c *KRPCClient) sendRequest(request *Request, retry int) {
 	tranID := request.Data["t"].(string)
-	tran := c.dht.transactionManager.newTransaction(tranID, request, retry)
-	c.dht.transactionManager.insertTransaction(tran)
-	defer c.dht.transactionManager.deleteTransaction(tran.id)
+	tran := c.dht.transport.newTransaction(tranID, request, retry)
+	c.dht.transport.insertTransaction(tran)
+	defer c.dht.transport.deleteTransaction(tran.id)
 
 	success := false
 	for i := 0; i < retry; i++ {
@@ -87,7 +98,7 @@ func (c *KRPCClient) sendRequest(request *Request, retry int) {
 }
 
 func (c *KRPCClient) Send(request *Request) error {
-	count, err := c.conn.WriteToUDP([]byte(Encode(request.Data)), request.remoteAddr.(*net.UDPAddr))
+	count, err := c.conn.WriteToUDP([]byte(util.Encode(request.Data)), request.remoteAddr.(*net.UDPAddr))
 	if err != nil {
 		return err
 	}

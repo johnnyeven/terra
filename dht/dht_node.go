@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 	"strings"
+	"git.profzone.net/terra/dht/util"
 )
 
 type Node struct {
@@ -20,7 +21,7 @@ func (node *Node) CompactNodeInfo() string {
 }
 
 func (node *Node) CompactIPPortInfo() string {
-	info, _ := encodeCompactIPPortInfo(node.addr.IP, node.addr.Port)
+	info, _ := util.EncodeCompactIPPortInfo(node.addr.IP, node.addr.Port)
 	return info
 }
 
@@ -43,10 +44,10 @@ func NewNodeFromCompactInfo(compactNodeInfo string, network string) (*Node, erro
 	}
 
 	id := compactNodeInfo[:20]
-	ip, port, err := decodeCompactIPPortInfo(compactNodeInfo[20:])
+	ip, port, err := util.DecodeCompactIPPortInfo(compactNodeInfo[20:])
 	if err != nil {
 		return nil, err
 	}
 
-	return NewNode(id, network, genAddress(ip.String(), port))
+	return NewNode(id, network, util.GenerateAddress(ip.String(), port))
 }

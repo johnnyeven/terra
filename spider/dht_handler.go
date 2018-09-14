@@ -6,10 +6,11 @@ import (
 	"net"
 	"fmt"
 	"errors"
+	"git.profzone.net/terra/dht/util"
 )
 
 func BTHandlePacket(table *dht.DistributedHashTable, packet dht.Packet) {
-	data, err := dht.Decode(packet.Data)
+	data, err := util.Decode(packet.Data)
 	if err != nil {
 		logrus.Errorf("Decode err: %v", err)
 	}
@@ -40,8 +41,8 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 	tranID := data["t"].(string)
 
 	if err := dht.ParseKeys(data, [][]string{{"q", "string"}, {"a", "map"}}); err != nil {
-		errResponse := table.GetConn().MakeError(addr, tranID, dht.ProtocolError, err.Error())
-		table.GetConn().GetClient().(*dht.KRPCClient).Send(errResponse)
+		errResponse := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, err.Error())
+		table.GetTransport().GetClient().(*dht.KRPCClient).Send(errResponse)
 		return false
 	}
 
@@ -54,16 +55,16 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 	}
 
 	if len(id) != 20 {
-		errResponse := table.GetConn().MakeError(addr, tranID, dht.ProtocolError, "invalid id length")
-		table.GetConn().GetClient().(*dht.KRPCClient).Send(errResponse)
+		errResponse := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, "invalid id length")
+		table.GetTransport().GetClient().(*dht.KRPCClient).Send(errResponse)
 		return false
 	}
 
 	switch q {
 	case dht.PingType:
 		logrus.Debug("ping request")
-		response := table.GetConn().MakeResponse(addr, tranID, map[string]interface{}{"id": table.ID(id)})
-		table.GetConn().GetClient().(*dht.KRPCClient).Send(response)
+		response := table.GetTransport().MakeResponse(addr, tranID, map[string]interface{}{"id": table.ID(id)})
+		table.GetTransport().GetClient().(*dht.KRPCClient).Send(response)
 	case dht.FindNodeType:
 	case dht.GetPeersType:
 	case dht.AnnouncePeerType:
@@ -75,7 +76,7 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 
 func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[string]interface{}) bool {
 	tranID := data["t"].(string)
-	tran := table.GetTransactionManager().Get(tranID, addr)
+	tran := table.GetTransport().Get(tranID, addr)
 	if tran == nil {
 		return false
 	}
@@ -136,7 +137,7 @@ func handleError(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[st
 		return false
 	}
 
-	if tran := table.GetTransactionManager().Get(data["t"].(string), addr); tran != nil {
+	if tran := table.GetTransport().Get(data["t"].(string), addr); tran != nil {
 		tran.ResponseChannel <- struct{}{}
 		logrus.Errorf("handled error errCode: %d, errMsg: %s", e[0].(int), e[1].(string))
 	}
@@ -172,7 +173,7 @@ func findOrContinueRequestTarget(table *dht.DistributedHashTable, targetID *dht.
 	for _, node := range table.GetRoutingTable().GetNeighbors(targetID, table.K) {
 		switch requestType {
 		case dht.FindNodeType:
-			table.GetTransactionManager().FindNode(node, id)
+			table.GetTransport().FindNode(node, id)
 		case dht.GetPeersType:
 		default:
 			logrus.Panicf("[findOrContinueRequestTarget] err: invalid request type: %s", requestType)

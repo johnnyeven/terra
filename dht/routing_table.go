@@ -5,6 +5,7 @@ import (
 	"time"
 	"strings"
 	"container/heap"
+	"git.profzone.net/terra/dht/util"
 )
 
 const maxPrefixLength = 160
@@ -38,7 +39,7 @@ func (b *bucket) RandomChildID() string {
 
 	return strings.Join([]string{
 		b.prefix.RawString()[:prefixLen],
-		randomString(20 - prefixLen),
+		util.RandomString(20 - prefixLen),
 	}, "")
 }
 
@@ -85,7 +86,7 @@ func (b *bucket) Fresh(table *DistributedHashTable) {
 	for e := range b.nodes.Iter() {
 		node := e.Value.(*Node)
 		if time.Since(node.LastActiveTime) > table.NodeExpriedAfter {
-			table.transactionManager.Ping(node)
+			table.transport.Ping(node)
 		}
 	}
 }
@@ -340,7 +341,7 @@ func (rt *routingTable) Fresh() {
 		for e := range bucket.nodes.Iter() {
 			if i < rt.table.RefreshNodeNum {
 				node := e.Value.(*Node)
-				rt.table.transactionManager.FindNode(node, bucket.RandomChildID())
+				rt.table.transport.FindNode(node, bucket.RandomChildID())
 				rt.clearQueue.PushBack(node)
 			}
 			i++
