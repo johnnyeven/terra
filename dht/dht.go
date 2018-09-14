@@ -108,7 +108,7 @@ func (dht *DistributedHashTable) join() {
 			continue
 		}
 
-		dht.transport.FindNode(&Node{addr: udpAddr}, dht.Self.ID.RawString())
+		dht.transport.FindNode(&Node{Addr: udpAddr}, dht.Self.ID.RawString())
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 
 type Node struct {
 	ID             *Identity
-	addr           *net.UDPAddr
+	Addr           *net.UDPAddr
 	LastActiveTime time.Time
 }
 
@@ -21,7 +21,7 @@ func (node *Node) CompactNodeInfo() string {
 }
 
 func (node *Node) CompactIPPortInfo() string {
-	info, _ := util.EncodeCompactIPPortInfo(node.addr.IP, node.addr.Port)
+	info, _ := util.EncodeCompactIPPortInfo(node.Addr.IP, node.Addr.Port)
 	return info
 }
 

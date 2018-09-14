@@ -119,7 +119,7 @@ func (t *Transport) Ping(node *Node) {
 		"id": t.dht.ID(node.ID.RawString()),
 	}
 
-	request := t.MakeRequest(node.ID, node.addr, PingType, data)
+	request := t.MakeRequest(node.ID, node.Addr, PingType, data)
 	t.Request(request)
 }
 
@@ -129,7 +129,7 @@ func (t *Transport) FindNode(node *Node, target string) {
 		"target": target,
 	}
 
-	request := t.MakeRequest(node.ID, node.addr, FindNodeType, data)
+	request := t.MakeRequest(node.ID, node.Addr, FindNodeType, data)
 	t.Request(request)
 }
 
@@ -139,7 +139,7 @@ func (t *Transport) GetPeers(node *Node, infoHash string) {
 		"info_hash": infoHash,
 	}
 
-	request := t.MakeRequest(node.ID, node.addr, GetPeersType, data)
+	request := t.MakeRequest(node.ID, node.Addr, GetPeersType, data)
 	t.Request(request)
 }
 
@@ -152,7 +152,7 @@ func (t *Transport) AnnouncePeer(node *Node, infoHash string, impliedPort, port 
 		"token":        token,
 	}
 
-	request := t.MakeRequest(node.ID, node.addr, AnnouncePeerType, data)
+	request := t.MakeRequest(node.ID, node.Addr, AnnouncePeerType, data)
 	t.Request(request)
 }
 

@@ -218,7 +218,7 @@ func (rt *routingTable) Insert(node *Node) bool {
 
 			isNew := root.bucket.Insert(node)
 
-			rt.cachedNodes.Set(node.addr.String(), node)
+			rt.cachedNodes.Set(node.Addr.String(), node)
 			rt.cachedBuckets.Push(root.bucket.prefix.String(), root.bucket)
 
 			return isNew
@@ -316,7 +316,7 @@ func (rt *routingTable) GetNodeByAddress(address string) (node *Node, ok bool) {
 func (rt *routingTable) Remove(id *Identity) {
 	if node, bucket := rt.GetNodeBucketByID(id); node != nil {
 		bucket.Replace(node)
-		rt.cachedNodes.Delete(node.addr.String())
+		rt.cachedNodes.Delete(node.Addr.String())
 		rt.cachedBuckets.Push(bucket.prefix.String(), bucket)
 	}
 }

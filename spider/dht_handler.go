@@ -49,6 +49,12 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 	q := data["q"].(string)
 	a := data["a"].(map[string]interface{})
 
+	if err := dht.ParseKey(a, "id", "string"); err != nil {
+		errResponse := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, err.Error())
+		table.GetTransport().GetClient().(*dht.KRPCClient).Send(errResponse)
+		return false
+	}
+
 	id := a["id"].(string)
 	if id == table.Self.ID.RawString() {
 		return false
@@ -60,12 +66,21 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 		return false
 	}
 
+	if node, ok := table.GetRoutingTable().GetNodeByAddress(addr.String()); ok && node.ID.RawString() != id {
+		table.GetRoutingTable().RemoveByAddr(addr.String())
+
+		errResponse := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, "invalid id")
+		table.GetTransport().GetClient().(*dht.KRPCClient).Send(errResponse)
+		return false
+	}
+
 	switch q {
 	case dht.PingType:
 		logrus.Debug("ping request")
 		response := table.GetTransport().MakeResponse(addr, tranID, map[string]interface{}{"id": table.ID(id)})
 		table.GetTransport().GetClient().(*dht.KRPCClient).Send(response)
 	case dht.FindNodeType:
+
 	case dht.GetPeersType:
 	case dht.AnnouncePeerType:
 
@@ -163,7 +178,7 @@ func findOrContinueRequestTarget(table *dht.DistributedHashTable, targetID *dht.
 		if table.GetRoutingTable().Insert(node) {
 			hasNew = true
 		}
-		logrus.Debugf("new_node received, %x", []byte(node.ID.RawString()))
+		logrus.Debugf("new_node received, id: %x, ip: %s, port: %d", []byte(node.ID.RawString()), node.Addr.IP.String(), node.Addr.Port)
 	}
 	if found || !hasNew {
 		return nil
