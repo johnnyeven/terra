@@ -71,7 +71,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	RootCmd.Flags().StringVar(&cfgFile, "config", "", "config file (default is ./.peer-to-world.yaml)")
+	RootCmd.Flags().StringVar(&cfgFile, "config", "", "config file (default is ./.terra.yaml)")
 
 	RootCmd.Flags().StringVarP(&configFileGroup, "file-group", "g", "", "")
 }
@@ -91,6 +91,16 @@ func initCmdConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		logrus.Debugf("Using config file: %s", viper.ConfigFileUsed())
+		logrus.Infof("Using config file: %s", viper.ConfigFileUsed())
+	}
+
+	env := viper.GetString("ENV")
+	switch env {
+	case "LOCAL":
+		logrus.SetLevel(logrus.DebugLevel)
+		break
+	case "PROD":
+	default:
+		logrus.SetLevel(logrus.InfoLevel)
 	}
 }

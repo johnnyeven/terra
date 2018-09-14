@@ -66,7 +66,7 @@ func (c *KRPCClient) sendRequest(request *Request, retry int) {
 
 	success := false
 	for i := 0; i < retry; i++ {
-		logrus.Warningf("[KRPCClient].Request c.conn.WriteToUDP try %d", i+1)
+		logrus.Debugf("[KRPCClient].Request c.conn.WriteToUDP try %d", i+1)
 		err := c.Send(request)
 		if err != nil {
 			logrus.Warningf("[KRPCClient].Request c.conn.WriteToUDP err: %v", err)

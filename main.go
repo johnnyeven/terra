@@ -8,7 +8,6 @@ import (
 
 func main() {
 	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.DebugLevel)
 
 	cmd.Execute()
 }
