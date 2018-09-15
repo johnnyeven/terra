@@ -1,12 +1,13 @@
 package spider
 
 import (
-	"git.profzone.net/terra/dht"
+	"git.profzone.net/profzone/terra/dht"
 	"github.com/sirupsen/logrus"
 	"net"
 	"fmt"
 	"errors"
-	"git.profzone.net/terra/dht/util"
+	"git.profzone.net/profzone/terra/dht/util"
+	"strings"
 )
 
 func BTHandlePacket(table *dht.DistributedHashTable, packet dht.Packet) {
@@ -76,14 +77,51 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 
 	switch q {
 	case dht.PingType:
-		logrus.Debug("ping request")
+		logrus.Info("ping request")
 		response := table.GetTransport().MakeResponse(addr, tranID, map[string]interface{}{"id": table.ID(id)})
 		table.GetTransport().GetClient().(*dht.KRPCClient).Send(response)
+		break
 	case dht.FindNodeType:
+		logrus.Info("find_node request")
+		if err := dht.ParseKey(a, "target", "string"); err != nil {
+			response := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, err.Error())
+			table.GetTransport().GetClient().(*dht.KRPCClient).Send(response)
+			return false
+		}
 
+		target := a["target"].(string)
+		if len(target) != 20 {
+			response := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, "invalid target")
+			table.GetTransport().GetClient().(*dht.KRPCClient).Send(response)
+			return false
+		}
+
+		var nodes string
+		targetID := dht.NewIdentityFromString(target)
+
+		no, _ := table.GetRoutingTable().GetNodeBucketByID(targetID)
+		if no != nil {
+			nodes = no.CompactNodeInfo()
+		} else {
+			nodes = strings.Join(
+				table.GetRoutingTable().GetNeighborCompactInfos(targetID, table.K),
+				"",
+			)
+		}
+
+		data := map[string]interface{}{
+			"id": table.ID(target),
+			"nodes": nodes,
+		}
+		response := table.GetTransport().MakeResponse(addr, tranID, data)
+		table.GetTransport().GetClient().(*dht.KRPCClient).Send(response)
+
+		break
 	case dht.GetPeersType:
+		logrus.Info("get_peers request")
+		break
 	case dht.AnnouncePeerType:
-
+		logrus.Info("announce_peer request")
 	}
 
 	return true

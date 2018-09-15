@@ -18,8 +18,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/sirupsen/logrus"
-	"git.profzone.net/terra/spider"
-	"git.profzone.net/terra/dht"
+	"git.profzone.net/profzone/terra/spider"
+	"git.profzone.net/profzone/terra/dht"
 	"time"
 	"math"
 )

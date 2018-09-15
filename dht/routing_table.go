@@ -5,7 +5,7 @@ import (
 	"time"
 	"strings"
 	"container/heap"
-	"git.profzone.net/terra/dht/util"
+	"git.profzone.net/profzone/terra/dht/util"
 )
 
 const maxPrefixLength = 160

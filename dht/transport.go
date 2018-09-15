@@ -5,7 +5,7 @@ import (
 	"time"
 	"sync"
 	"strings"
-	"git.profzone.net/terra/dht/util"
+	"git.profzone.net/profzone/terra/dht/util"
 )
 
 const RequestRetryTime = 2

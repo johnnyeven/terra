@@ -5,7 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/ethereum/go-ethereum/p2p/nat"
 	"time"
-	"git.profzone.net/terra/dht/util"
+	"git.profzone.net/profzone/terra/dht/util"
 )
 
 type DistributedHashTable struct {
