@@ -178,7 +178,7 @@ func findOrContinueRequestTarget(table *dht.DistributedHashTable, targetID *dht.
 		if table.GetRoutingTable().Insert(node) {
 			hasNew = true
 		}
-		logrus.Debugf("new_node received, id: %x, ip: %s, port: %d", []byte(node.ID.RawString()), node.Addr.IP.String(), node.Addr.Port)
+		logrus.Infof("new_node received, id: %x, ip: %s, port: %d", []byte(node.ID.RawString()), node.Addr.IP.String(), node.Addr.Port)
 	}
 	if found || !hasNew {
 		return nil
@@ -190,6 +190,7 @@ func findOrContinueRequestTarget(table *dht.DistributedHashTable, targetID *dht.
 		case dht.FindNodeType:
 			table.GetTransport().FindNode(node, id)
 		case dht.GetPeersType:
+			table.GetTransport().GetPeers(node, id)
 		default:
 			logrus.Panicf("[findOrContinueRequestTarget] err: invalid request type: %s", requestType)
 		}
