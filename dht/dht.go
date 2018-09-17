@@ -10,20 +10,20 @@ import (
 
 type DistributedHashTable struct {
 	// the kbucket expired duration
-	KBucketExpiredAfter time.Duration
+	BucketExpiredAfter time.Duration
 	// the node expired duration
 	NodeExpriedAfter time.Duration
 	// how long it checks whether the bucket is expired
-	CheckKBucketPeriod time.Duration
+	CheckBucketPeriod time.Duration
 	// the max transaction id
 	MaxTransactionCursor uint64
 	// how many nodes routing table can hold
 	MaxNodes int
 	// in mainline dht, k = 8
 	K int
-	// for crawling mode, we put all nodes in one bucket, so KBucketSize may
+	// for crawling mode, we put all nodes in one bucket, so BucketSize may
 	// not be K
-	KBucketSize int
+	BucketSize int
 	// the nodes num to be fresh in a kbucket
 	RefreshNodeNum int
 	// udp, udp4, udp6
@@ -53,7 +53,7 @@ func (dht *DistributedHashTable) Run() {
 	dht.listen()
 	dht.join()
 
-	tick := time.Tick(dht.CheckKBucketPeriod)
+	tick := time.Tick(dht.CheckBucketPeriod)
 
 	for {
 		select {
@@ -88,7 +88,7 @@ func (dht *DistributedHashTable) init() {
 	dht.transport = NewKRPCTransport(dht, listener.(*net.UDPConn), dht.MaxTransactionCursor)
 	go dht.transport.Run()
 
-	dht.routingTable = newRoutingTable(dht.KBucketSize, dht)
+	dht.routingTable = newRoutingTable(dht.BucketSize, dht)
 	dht.nat = nat.Any()
 	dht.packetChannel = make(chan Packet)
 	dht.quitChannel = make(chan struct{})

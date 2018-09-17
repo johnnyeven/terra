@@ -35,13 +35,13 @@ var RootCmd = &cobra.Command{
 	Short: "A P2P demo application",
 	Run: func(cmd *cobra.Command, args []string) {
 		table := dht.DistributedHashTable{
-			KBucketExpiredAfter:  0,
+			BucketExpiredAfter:   0,
 			NodeExpriedAfter:     0,
-			CheckKBucketPeriod:   5 * time.Second,
+			CheckBucketPeriod:    5 * time.Second,
 			MaxTransactionCursor: math.MaxUint32,
 			MaxNodes:             5000,
 			K:                    8,
-			KBucketSize:          math.MaxInt32,
+			BucketSize:           math.MaxInt32,
 			RefreshNodeNum:       256,
 			Network:              "udp4",
 			LocalAddr:            ":6881",

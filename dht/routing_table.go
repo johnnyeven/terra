@@ -333,7 +333,7 @@ func (rt *routingTable) Fresh() {
 
 	for e := range rt.cachedBuckets.Iter() {
 		bucket := e.Value.(*bucket)
-		if now.Sub(bucket.LastChangeTime()) < rt.table.KBucketExpiredAfter || bucket.nodes.Len() == 0 {
+		if now.Sub(bucket.LastChangeTime()) < rt.table.BucketExpiredAfter || bucket.nodes.Len() == 0 {
 			continue
 		}
 
