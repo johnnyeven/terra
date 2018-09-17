@@ -31,11 +31,11 @@ type KRPCClient struct {
 	dht  *DistributedHashTable
 }
 
-func NewKRPCTransport(dht *DistributedHashTable, conn *net.UDPConn, maxCursor uint64) *Transport {
+func NewKRPCTransport(dht *DistributedHashTable, conn net.Conn, maxCursor uint64) *Transport {
 	trans := &Transport{}
 	trans.Init(dht, &KRPCClient{
 		dht:  dht,
-		conn: conn,
+		conn: conn.(*net.UDPConn),
 	}, maxCursor)
 
 	return trans

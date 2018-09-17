@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/nat"
 	"time"
 	"git.profzone.net/profzone/terra/dht/util"
+	"math"
 )
 
 type DistributedHashTable struct {
@@ -32,6 +33,8 @@ type DistributedHashTable struct {
 	LocalAddr string
 	// initialized node list
 	SeedNodes []string
+	// the constructor func for transport
+	TransportConstructor func(dht *DistributedHashTable, conn net.Conn, maxCursor uint64) *Transport
 	// the Transport communicating component
 	transport *Transport
 	// node storage engin
@@ -52,6 +55,64 @@ type DistributedHashTable struct {
 	PingFunc func(node *Node, t *Transport)
 }
 
+type Config struct {
+	BucketExpiredAfter   time.Duration
+	NodeExpiredAfter     time.Duration
+	CheckBucketPeriod    time.Duration
+	MaxTransactionCursor uint64
+	MaxNodes             int
+	K                    int
+	BucketSize           int
+	RefreshNodeCount     int
+	Network              string
+	LocalAddr            string
+	SeedNodes            []string
+	TransportConstructor func(dht *DistributedHashTable, conn net.Conn, maxCursor uint64) *Transport
+	Handler              func(table *DistributedHashTable, packet Packet)
+	HandshakeFunc        func(node *Node, t *Transport, target string)
+	PingFunc             func(node *Node, t *Transport)
+}
+
+func GetNormalConfig() *Config {
+	return &Config{
+		BucketExpiredAfter:   0,
+		NodeExpiredAfter:     0,
+		CheckBucketPeriod:    5 * time.Second,
+		MaxTransactionCursor: math.MaxUint32,
+		MaxNodes:             5000,
+		K:                    8,
+		BucketSize:           math.MaxInt32,
+		RefreshNodeCount:     256,
+		Network:              "udp4",
+		LocalAddr:            ":6881",
+	}
+}
+
+func NewDHT(config *Config) *DistributedHashTable {
+	if config == nil {
+		logrus.Panic("config is empty")
+	}
+	table := &DistributedHashTable{
+		BucketExpiredAfter:   config.BucketExpiredAfter,
+		NodeExpiredAfter:     config.NodeExpiredAfter,
+		CheckBucketPeriod:    config.CheckBucketPeriod,
+		MaxTransactionCursor: config.MaxTransactionCursor,
+		MaxNodes:             config.MaxNodes,
+		K:                    config.K,
+		BucketSize:           config.BucketSize,
+		RefreshNodeCount:     config.RefreshNodeCount,
+		Network:              config.Network,
+		LocalAddr:            config.LocalAddr,
+		SeedNodes:            config.SeedNodes,
+		TransportConstructor: config.TransportConstructor,
+		Handler:              config.Handler,
+		HandshakeFunc:        config.HandshakeFunc,
+		PingFunc:             config.PingFunc,
+	}
+
+	return table
+}
+
 func (dht *DistributedHashTable) Run() {
 	dht.init()
 	dht.listen()
@@ -59,6 +120,7 @@ func (dht *DistributedHashTable) Run() {
 
 	tick := time.Tick(dht.CheckBucketPeriod)
 
+Run:
 	for {
 		select {
 		case packet := <-dht.packetChannel:
@@ -70,7 +132,7 @@ func (dht *DistributedHashTable) Run() {
 				go dht.routingTable.Fresh()
 			}
 		case <-dht.quitChannel:
-			dht.transport.Close()
+			break Run
 		}
 	}
 }
@@ -84,6 +146,15 @@ func (dht *DistributedHashTable) GetRoutingTable() *routingTable {
 }
 
 func (dht *DistributedHashTable) init() {
+	if dht.TransportConstructor == nil {
+		logrus.Panic("dht TransportConstructor not set")
+	}
+	if dht.HandshakeFunc == nil {
+		logrus.Panic("dht HandshakeFunc not set")
+	}
+	if dht.PingFunc == nil {
+		logrus.Panic("dht PingFunc not set")
+	}
 	if dht.Handler == nil {
 		logrus.Panic("dht Handler not set")
 	}
@@ -92,8 +163,10 @@ func (dht *DistributedHashTable) init() {
 		logrus.Panicf("[DistributedHashTable].init net.ListenPacket err: %v", err)
 	}
 
-	dht.transport = NewKRPCTransport(dht, listener.(*net.UDPConn), dht.MaxTransactionCursor)
-	go dht.transport.Run()
+	dht.transport = dht.TransportConstructor(dht, listener.(net.Conn), dht.MaxTransactionCursor)
+	if dht.transport != nil {
+		go dht.transport.Run()
+	}
 
 	dht.routingTable = newRoutingTable(dht.BucketSize, dht)
 	dht.nat = nat.Any()
@@ -135,4 +208,11 @@ func (dht *DistributedHashTable) ID(target string) string {
 		return dht.Self.ID.RawString()
 	}
 	return target[:15] + dht.Self.ID.RawString()[15:]
+}
+
+func (dht *DistributedHashTable) Close() {
+	dht.quitChannel <- struct{}{}
+	dht.transport.Close()
+	close(dht.packetChannel)
+	close(dht.quitChannel)
 }

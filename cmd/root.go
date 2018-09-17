@@ -18,10 +18,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/sirupsen/logrus"
-	"git.profzone.net/profzone/terra/spider"
 	"git.profzone.net/profzone/terra/dht"
-	"time"
-	"math"
+	"git.profzone.net/profzone/terra/spider"
 )
 
 var (
@@ -34,27 +32,19 @@ var RootCmd = &cobra.Command{
 	Use:   "terra",
 	Short: "A P2P demo application",
 	Run: func(cmd *cobra.Command, args []string) {
-		table := dht.DistributedHashTable{
-			BucketExpiredAfter:   0,
-			NodeExpiredAfter:     0,
-			CheckBucketPeriod:    5 * time.Second,
-			MaxTransactionCursor: math.MaxUint32,
-			MaxNodes:             5000,
-			K:                    8,
-			BucketSize:           math.MaxInt32,
-			RefreshNodeCount:     256,
-			Network:              "udp4",
-			LocalAddr:            ":6881",
-			SeedNodes: []string{
-				"router.bittorrent.com:6881",
-				"router.utorrent.com:6881",
-				"dht.transmissionbt.com:6881",
-			},
-			Self:    nil,
-			Handler: spider.BTHandlePacket,
-			HandshakeFunc: spider.FindNode,
-			PingFunc: spider.Ping,
+
+		config := dht.GetNormalConfig()
+		config.SeedNodes = []string{
+			"router.bittorrent.com:6881",
+			"router.utorrent.com:6881",
+			"dht.transmissionbt.com:6881",
 		}
+		config.TransportConstructor = dht.NewKRPCTransport
+		config.Handler = spider.BTHandlePacket
+		config.HandshakeFunc = spider.FindNode
+		config.PingFunc = spider.Ping
+
+		table := dht.NewDHT(config)
 		table.Run()
 	},
 }

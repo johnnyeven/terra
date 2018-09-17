@@ -19,13 +19,14 @@ type transaction struct {
 type Transport struct {
 	TransportDriver
 	*sync.RWMutex
-	transactions   *syncedMap
-	index          *syncedMap
+	transactions   *SyncedMap
+	index          *SyncedMap
 	cursor         uint64
 	maxCursor      uint64
 	dht            *DistributedHashTable
 	client         TransportDriver
 	requestChannel chan *Request
+	quitChannel    chan struct{}
 }
 
 var _ interface {
@@ -123,10 +124,14 @@ func (t *Transport) GetClient() TransportDriver {
 }
 
 func (t *Transport) Run() {
+
+Run:
 	for {
 		select {
 		case r := <-t.requestChannel:
 			go t.sendRequest(r, RequestRetryTime)
+		case <-t.quitChannel:
+			break Run
 		}
 	}
 }
@@ -138,9 +143,10 @@ func (t *Transport) sendRequest(request *Request, retry int) {
 func (t *Transport) Init(table *DistributedHashTable, client TransportDriver, maxCursor uint64) {
 	t.client = client
 	t.requestChannel = make(chan *Request)
+	t.quitChannel = make(chan struct{})
 	t.RWMutex = &sync.RWMutex{}
-	t.transactions = newSyncedMap()
-	t.index = newSyncedMap()
+	t.transactions = NewSyncedMap()
+	t.index = NewSyncedMap()
 	t.maxCursor = maxCursor
 	t.dht = table
 }
@@ -174,6 +180,9 @@ func (t *Transport) Write(b []byte) (n int, err error) {
 }
 
 func (t *Transport) Close() error {
+	t.quitChannel <- struct{}{}
+	close(t.requestChannel)
+	close(t.quitChannel)
 	return t.client.Close()
 }
 

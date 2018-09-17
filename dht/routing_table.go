@@ -12,16 +12,16 @@ const maxPrefixLength = 160
 
 type bucket struct {
 	sync.RWMutex
-	nodes          *keyedDeque
-	candidates     *keyedDeque
+	nodes          *KeyedDeque
+	candidates     *KeyedDeque
 	prefix         *Identity
 	lastChangeTime time.Time
 }
 
 func newBucket(prefix *Identity) *bucket {
 	return &bucket{
-		nodes:          newKeyedDeque(),
-		candidates:     newKeyedDeque(),
+		nodes:          NewKeyedDeque(),
+		candidates:     NewKeyedDeque(),
 		prefix:         prefix,
 		lastChangeTime: time.Now(),
 	}
@@ -173,10 +173,10 @@ type routingTable struct {
 	sync.RWMutex
 	k             int
 	root          *routingTableNode
-	cachedNodes   *syncedMap
-	cachedBuckets *keyedDeque
+	cachedNodes   *SyncedMap
+	cachedBuckets *KeyedDeque
 	table         *DistributedHashTable
-	clearQueue    *syncedList
+	clearQueue    *SyncedList
 }
 
 func newRoutingTable(k int, table *DistributedHashTable) *routingTable {
@@ -185,10 +185,10 @@ func newRoutingTable(k int, table *DistributedHashTable) *routingTable {
 	rt := &routingTable{
 		k:             k,
 		root:          root,
-		cachedNodes:   newSyncedMap(),
-		cachedBuckets: newKeyedDeque(),
+		cachedNodes:   NewSyncedMap(),
+		cachedBuckets: NewKeyedDeque(),
 		table:         table,
-		clearQueue:    newSyncedList(),
+		clearQueue:    NewSyncedList(),
 	}
 	rt.cachedBuckets.Push(root.bucket.prefix.String(), root.bucket)
 	return rt
