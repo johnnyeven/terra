@@ -138,8 +138,8 @@ func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map
 		return false
 	}
 
-	q := tran.Data["q"].(string)
-	a := tran.Data["a"].(map[string]interface{})
+	q := tran.Data.(map[string]interface{})["q"].(string)
+	a := tran.Data.(map[string]interface{})["a"].(map[string]interface{})
 	r := data["r"].(map[string]interface{})
 
 	if err := dht.ParseKey(r, "id", "string"); err != nil {
@@ -147,7 +147,7 @@ func handleResponse(table *dht.DistributedHashTable, addr *net.UDPAddr, data map
 	}
 	id := r["id"].(string)
 
-	if tran.ClientID != nil && tran.ClientID.RawString() != r["id"].(string) {
+	if tran.ClientID.(*dht.Identity) != nil && tran.ClientID.(*dht.Identity).RawString() != r["id"].(string) {
 		table.GetRoutingTable().RemoveByAddr(addr.String())
 		return false
 	}

@@ -41,8 +41,8 @@ func NewKRPCTransport(dht *DistributedHashTable, conn net.Conn, maxCursor uint64
 	return trans
 }
 
-func (c *KRPCClient) MakeRequest(id *Identity, remoteAddr net.Addr, requestType string, data map[string]interface{}) *Request {
-	params := MakeQuery(c.dht.transport.generateTranID(), requestType, data)
+func (c *KRPCClient) MakeRequest(id interface{}, remoteAddr net.Addr, requestType string, data interface{}) *Request {
+	params := MakeQuery(c.dht.transport.generateTranID(), requestType, data.(map[string]interface{}))
 	return &Request{
 		ClientID:   id,
 		cmd:        requestType,
@@ -51,8 +51,8 @@ func (c *KRPCClient) MakeRequest(id *Identity, remoteAddr net.Addr, requestType 
 	}
 }
 
-func (c *KRPCClient) MakeResponse(remoteAddr net.Addr, tranID string, data map[string]interface{}) *Request {
-	params := MakeResponse(tranID, data)
+func (c *KRPCClient) MakeResponse(remoteAddr net.Addr, tranID string, data interface{}) *Request {
+	params := MakeResponse(tranID, data.(map[string]interface{}))
 	return &Request{
 		Data:       params,
 		remoteAddr: remoteAddr,
@@ -69,8 +69,8 @@ func (c *KRPCClient) MakeError(remoteAddr net.Addr, tranID string, errCode int, 
 
 func (c *KRPCClient) Request(request *Request) {}
 
-func (c *KRPCClient) sendRequest(request *Request, retry int) {
-	tranID := request.Data["t"].(string)
+func (c *KRPCClient) SendRequest(request *Request, retry int) {
+	tranID := request.Data.(map[string]interface{})["t"].(string)
 	tran := c.dht.transport.newTransaction(tranID, request, retry)
 	c.dht.transport.insertTransaction(tran)
 	defer c.dht.transport.deleteTransaction(tran.id)

@@ -58,7 +58,7 @@ func (t *Transport) genIndexKey(queryType, address string) string {
 }
 
 func (t *Transport) genIndexKeyByTrans(tran *transaction) string {
-	return t.genIndexKey(tran.Data["q"].(string), tran.remoteAddr.String())
+	return t.genIndexKey(tran.Data.(map[string]interface{})["q"].(string), tran.remoteAddr.String())
 }
 
 func (t *Transport) insertTransaction(tran *transaction) {
@@ -129,15 +129,15 @@ Run:
 	for {
 		select {
 		case r := <-t.requestChannel:
-			go t.sendRequest(r, RequestRetryTime)
+			go t.SendRequest(r, RequestRetryTime)
 		case <-t.quitChannel:
 			break Run
 		}
 	}
 }
 
-func (t *Transport) sendRequest(request *Request, retry int) {
-	t.client.sendRequest(request, retry)
+func (t *Transport) SendRequest(request *Request, retry int) {
+	t.client.SendRequest(request, retry)
 }
 
 func (t *Transport) Init(table *DistributedHashTable, client TransportDriver, maxCursor uint64) {
@@ -151,11 +151,11 @@ func (t *Transport) Init(table *DistributedHashTable, client TransportDriver, ma
 	t.dht = table
 }
 
-func (t *Transport) MakeRequest(id *Identity, remoteAddr net.Addr, requestType string, data map[string]interface{}) *Request {
+func (t *Transport) MakeRequest(id interface{}, remoteAddr net.Addr, requestType string, data interface{}) *Request {
 	return t.client.MakeRequest(id, remoteAddr, requestType, data)
 }
 
-func (t *Transport) MakeResponse(remoteAddr net.Addr, tranID string, data map[string]interface{}) *Request {
+func (t *Transport) MakeResponse(remoteAddr net.Addr, tranID string, data interface{}) *Request {
 	return t.client.MakeResponse(remoteAddr, tranID, data)
 }
 

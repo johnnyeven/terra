@@ -166,6 +166,8 @@ func (dht *DistributedHashTable) init() {
 	dht.transport = dht.TransportConstructor(dht, listener.(net.Conn), dht.MaxTransactionCursor)
 	if dht.transport != nil {
 		go dht.transport.Run()
+	} else {
+		logrus.Panic("dht.transport is nil")
 	}
 
 	dht.routingTable = newRoutingTable(dht.BucketSize, dht)
