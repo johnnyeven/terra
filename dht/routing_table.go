@@ -86,7 +86,7 @@ func (b *bucket) Fresh(table *DistributedHashTable) {
 	for e := range b.nodes.Iter() {
 		node := e.Value.(*Node)
 		if time.Since(node.LastActiveTime) > table.NodeExpiredAfter {
-			table.transport.Ping(node)
+			table.PingFunc(node, table.GetTransport())
 		}
 	}
 }
@@ -341,7 +341,7 @@ func (rt *routingTable) Fresh() {
 		for e := range bucket.nodes.Iter() {
 			if i < rt.table.RefreshNodeCount {
 				node := e.Value.(*Node)
-				rt.table.transport.FindNode(node, bucket.RandomChildID())
+				rt.table.HandshakeFunc(node, rt.table.GetTransport(), bucket.RandomChildID())
 				rt.clearQueue.PushBack(node)
 			}
 			i++

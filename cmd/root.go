@@ -52,6 +52,8 @@ var RootCmd = &cobra.Command{
 			},
 			Self:    nil,
 			Handler: spider.BTHandlePacket,
+			HandshakeFunc: spider.FindNode,
+			PingFunc: spider.Ping,
 		}
 		table.Run()
 	},

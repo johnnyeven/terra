@@ -27,25 +27,29 @@ type DistributedHashTable struct {
 	// the nodes num to be fresh in a kbucket
 	RefreshNodeCount int
 	// udp, udp4, udp6
-	Network       string
+	Network string
 	// local network address
-	LocalAddr     string
+	LocalAddr string
 	// initialized node list
-	SeedNodes     []string
+	SeedNodes []string
 	// the Transport communicating component
-	transport     *Transport
+	transport *Transport
 	// node storage engin
-	routingTable  *routingTable
+	routingTable *routingTable
 	// NAT
-	nat           nat.Interface
+	nat nat.Interface
 	// self node
-	Self          *Node
+	Self *Node
 	// received packet channel
 	packetChannel chan Packet
 	// system shutdown channel
-	quitChannel   chan struct{}
+	quitChannel chan struct{}
 	// packet handler
-	Handler       func(table *DistributedHashTable, packet Packet)
+	Handler func(table *DistributedHashTable, packet Packet)
+	// join method
+	HandshakeFunc func(node *Node, t *Transport, target string)
+	// ping method
+	PingFunc func(node *Node, t *Transport)
 }
 
 func (dht *DistributedHashTable) Run() {
@@ -80,6 +84,9 @@ func (dht *DistributedHashTable) GetRoutingTable() *routingTable {
 }
 
 func (dht *DistributedHashTable) init() {
+	if dht.Handler == nil {
+		logrus.Panic("dht Handler not set")
+	}
 	listener, err := net.ListenPacket(dht.Network, dht.LocalAddr)
 	if err != nil {
 		logrus.Panicf("[DistributedHashTable].init net.ListenPacket err: %v", err)
@@ -108,7 +115,7 @@ func (dht *DistributedHashTable) join() {
 			continue
 		}
 
-		dht.transport.FindNode(&Node{Addr: udpAddr}, dht.Self.ID.RawString())
+		dht.HandshakeFunc(&Node{Addr: udpAddr}, dht.transport, dht.Self.ID.RawString())
 	}
 }
 

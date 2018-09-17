@@ -226,9 +226,9 @@ func findOrContinueRequestTarget(table *dht.DistributedHashTable, targetID *dht.
 	for _, node := range table.GetRoutingTable().GetNeighbors(targetID, table.K) {
 		switch requestType {
 		case dht.FindNodeType:
-			table.GetTransport().FindNode(node, id)
+			FindNode(node, table.GetTransport(), id)
 		case dht.GetPeersType:
-			table.GetTransport().GetPeers(node, id)
+			GetPeers(node, table.GetTransport(), id)
 		default:
 			logrus.Panicf("[findOrContinueRequestTarget] err: invalid request type: %s", requestType)
 		}

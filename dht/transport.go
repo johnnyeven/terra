@@ -32,6 +32,10 @@ var _ interface {
 	TransportDriver
 } = (*Transport)(nil)
 
+func (t *Transport) GetDHT() *DistributedHashTable {
+	return t.dht
+}
+
 func (t *Transport) generateTranID() string {
 	t.Lock()
 	defer t.Unlock()
@@ -112,48 +116,6 @@ func (t *Transport) Get(transID string, addr *net.UDPAddr) *transaction {
 	}
 
 	return trans
-}
-
-func (t *Transport) Ping(node *Node) {
-	data := map[string]interface{}{
-		"id": t.dht.ID(node.ID.RawString()),
-	}
-
-	request := t.MakeRequest(node.ID, node.Addr, PingType, data)
-	t.Request(request)
-}
-
-func (t *Transport) FindNode(node *Node, target string) {
-	data := map[string]interface{}{
-		"id":     t.dht.ID(target),
-		"target": target,
-	}
-
-	request := t.MakeRequest(node.ID, node.Addr, FindNodeType, data)
-	t.Request(request)
-}
-
-func (t *Transport) GetPeers(node *Node, infoHash string) {
-	data := map[string]interface{}{
-		"id":        t.dht.ID(infoHash),
-		"info_hash": infoHash,
-	}
-
-	request := t.MakeRequest(node.ID, node.Addr, GetPeersType, data)
-	t.Request(request)
-}
-
-func (t *Transport) AnnouncePeer(node *Node, infoHash string, impliedPort, port int, token string) {
-	data := map[string]interface{}{
-		"id":           t.dht.ID(node.ID.RawString()),
-		"info_hash":    infoHash,
-		"implied_port": impliedPort,
-		"port":         port,
-		"token":        token,
-	}
-
-	request := t.MakeRequest(node.ID, node.Addr, AnnouncePeerType, data)
-	t.Request(request)
 }
 
 func (t *Transport) GetClient() TransportDriver {
