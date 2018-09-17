@@ -26,7 +26,7 @@ func BTHandlePacket(table *dht.DistributedHashTable, packet dht.Packet) {
 	}
 
 	if handler, ok := handlers[response["y"].(string)]; ok {
-		handler(table, packet.RemoteAddr, response)
+		handler(table, packet.RemoteAddr.(*net.UDPAddr), response)
 	}
 }
 
@@ -42,7 +42,7 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 	tranID := data["t"].(string)
 
 	if err := dht.ParseKeys(data, [][]string{{"q", "string"}, {"a", "map"}}); err != nil {
-		errResponse := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, err.Error())
+		errResponse := table.GetTransport().MakeError(nil, addr, tranID, dht.ProtocolError, err.Error())
 		table.GetTransport().GetClient().(*dht.KRPCClient).Send(errResponse)
 		return false
 	}
@@ -51,7 +51,7 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 	a := data["a"].(map[string]interface{})
 
 	if err := dht.ParseKey(a, "id", "string"); err != nil {
-		errResponse := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, err.Error())
+		errResponse := table.GetTransport().MakeError(nil, addr, tranID, dht.ProtocolError, err.Error())
 		table.GetTransport().GetClient().(*dht.KRPCClient).Send(errResponse)
 		return false
 	}
@@ -62,7 +62,7 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 	}
 
 	if len(id) != 20 {
-		errResponse := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, "invalid id length")
+		errResponse := table.GetTransport().MakeError(nil, addr, tranID, dht.ProtocolError, "invalid id length")
 		table.GetTransport().GetClient().(*dht.KRPCClient).Send(errResponse)
 		return false
 	}
@@ -70,7 +70,7 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 	if node, ok := table.GetRoutingTable().GetNodeByAddress(addr.String()); ok && node.ID.RawString() != id {
 		table.GetRoutingTable().RemoveByAddr(addr.String())
 
-		errResponse := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, "invalid id")
+		errResponse := table.GetTransport().MakeError(nil, addr, tranID, dht.ProtocolError, "invalid id")
 		table.GetTransport().GetClient().(*dht.KRPCClient).Send(errResponse)
 		return false
 	}
@@ -78,20 +78,20 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 	switch q {
 	case dht.PingType:
 		logrus.Info("ping request")
-		response := table.GetTransport().MakeResponse(addr, tranID, map[string]interface{}{"id": table.ID(id)})
+		response := table.GetTransport().MakeResponse(nil, addr, tranID, map[string]interface{}{"id": table.ID(id)})
 		table.GetTransport().GetClient().(*dht.KRPCClient).Send(response)
 		break
 	case dht.FindNodeType:
 		logrus.Info("find_node request")
 		if err := dht.ParseKey(a, "target", "string"); err != nil {
-			response := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, err.Error())
+			response := table.GetTransport().MakeError(nil, addr, tranID, dht.ProtocolError, err.Error())
 			table.GetTransport().GetClient().(*dht.KRPCClient).Send(response)
 			return false
 		}
 
 		target := a["target"].(string)
 		if len(target) != 20 {
-			response := table.GetTransport().MakeError(addr, tranID, dht.ProtocolError, "invalid target")
+			response := table.GetTransport().MakeError(nil, addr, tranID, dht.ProtocolError, "invalid target")
 			table.GetTransport().GetClient().(*dht.KRPCClient).Send(response)
 			return false
 		}
@@ -113,7 +113,7 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 			"id": table.ID(target),
 			"nodes": nodes,
 		}
-		response := table.GetTransport().MakeResponse(addr, tranID, data)
+		response := table.GetTransport().MakeResponse(nil, addr, tranID, data)
 		table.GetTransport().GetClient().(*dht.KRPCClient).Send(response)
 
 		break

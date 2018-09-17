@@ -128,7 +128,7 @@ Run:
 		case <-tick:
 			if dht.routingTable.Len() == 0 {
 				dht.join()
-			} else if dht.transport.transactionLength() == 0 {
+			} else if dht.transport.TransactionLength() == 0 {
 				go dht.routingTable.Fresh()
 			}
 		case <-dht.quitChannel:

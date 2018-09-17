@@ -12,7 +12,7 @@ const RequestRetryTime = 2
 
 type transaction struct {
 	*Request
-	id              string
+	ID              interface{}
 	ResponseChannel chan struct{}
 }
 
@@ -37,7 +37,7 @@ func (t *Transport) GetDHT() *DistributedHashTable {
 	return t.dht
 }
 
-func (t *Transport) generateTranID() string {
+func (t *Transport) GenerateTranID() string {
 	t.Lock()
 	defer t.Unlock()
 
@@ -45,10 +45,10 @@ func (t *Transport) generateTranID() string {
 	return string(util.Int2Bytes(t.cursor))
 }
 
-func (t *Transport) newTransaction(id string, request *Request, retry int) *transaction {
+func (t *Transport) NewTransaction(id interface{}, request *Request, retry int) *transaction {
 	return &transaction{
 		Request:         request,
-		id:              id,
+		ID:              id,
 		ResponseChannel: make(chan struct{}, retry+1),
 	}
 }
@@ -58,18 +58,18 @@ func (t *Transport) genIndexKey(queryType, address string) string {
 }
 
 func (t *Transport) genIndexKeyByTrans(tran *transaction) string {
-	return t.genIndexKey(tran.Data.(map[string]interface{})["q"].(string), tran.remoteAddr.String())
+	return t.genIndexKey(tran.Data.(map[string]interface{})["q"].(string), tran.RemoteAddr.String())
 }
 
-func (t *Transport) insertTransaction(tran *transaction) {
+func (t *Transport) InsertTransaction(tran *transaction) {
 	t.Lock()
 	defer t.Unlock()
 
-	t.transactions.Set(tran.id, tran)
+	t.transactions.Set(tran.ID, tran)
 	t.index.Set(t.genIndexKeyByTrans(tran), tran)
 }
 
-func (t *Transport) deleteTransaction(id string) {
+func (t *Transport) DeleteTransaction(id interface{}) {
 	v, ok := t.transactions.Get(id)
 	if !ok {
 		return
@@ -79,11 +79,11 @@ func (t *Transport) deleteTransaction(id string) {
 	defer t.Unlock()
 
 	tran := v.(*transaction)
-	t.transactions.Delete(tran.id)
+	t.transactions.Delete(tran.ID)
 	t.index.Delete(t.genIndexKeyByTrans(tran))
 }
 
-func (t *Transport) transactionLength() int {
+func (t *Transport) TransactionLength() int {
 	return t.transactions.Len()
 }
 
@@ -112,7 +112,7 @@ func (t *Transport) GetByIndex(index string) *transaction {
 func (t *Transport) Get(transID string, addr *net.UDPAddr) *transaction {
 	trans := t.GetByTranID(transID)
 
-	if trans == nil || trans.remoteAddr.String() != addr.String() {
+	if trans == nil || trans.RemoteAddr.String() != addr.String() {
 		return nil
 	}
 
@@ -155,12 +155,12 @@ func (t *Transport) MakeRequest(id interface{}, remoteAddr net.Addr, requestType
 	return t.client.MakeRequest(id, remoteAddr, requestType, data)
 }
 
-func (t *Transport) MakeResponse(remoteAddr net.Addr, tranID string, data interface{}) *Request {
-	return t.client.MakeResponse(remoteAddr, tranID, data)
+func (t *Transport) MakeResponse(id interface{}, remoteAddr net.Addr, tranID interface{}, data interface{}) *Request {
+	return t.client.MakeResponse(id, remoteAddr, tranID, data)
 }
 
-func (t *Transport) MakeError(remoteAddr net.Addr, tranID string, errCode int, errMsg string) *Request {
-	return t.client.MakeError(remoteAddr, tranID, errCode, errMsg)
+func (t *Transport) MakeError(id interface{}, remoteAddr net.Addr, tranID interface{}, errCode int, errMsg string) *Request {
+	return t.client.MakeError(id, remoteAddr, tranID, errCode, errMsg)
 }
 
 func (t *Transport) Request(request *Request) {

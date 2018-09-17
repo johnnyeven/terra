@@ -42,28 +42,28 @@ func NewKRPCTransport(dht *DistributedHashTable, conn net.Conn, maxCursor uint64
 }
 
 func (c *KRPCClient) MakeRequest(id interface{}, remoteAddr net.Addr, requestType string, data interface{}) *Request {
-	params := MakeQuery(c.dht.transport.generateTranID(), requestType, data.(map[string]interface{}))
+	params := MakeQuery(c.dht.transport.GenerateTranID(), requestType, data.(map[string]interface{}))
 	return &Request{
 		ClientID:   id,
 		cmd:        requestType,
 		Data:       params,
-		remoteAddr: remoteAddr,
+		RemoteAddr: remoteAddr,
 	}
 }
 
-func (c *KRPCClient) MakeResponse(remoteAddr net.Addr, tranID string, data interface{}) *Request {
-	params := MakeResponse(tranID, data.(map[string]interface{}))
+func (c *KRPCClient) MakeResponse(id interface{}, remoteAddr net.Addr, tranID interface{}, data interface{}) *Request {
+	params := MakeResponse(tranID.(string), data.(map[string]interface{}))
 	return &Request{
 		Data:       params,
-		remoteAddr: remoteAddr,
+		RemoteAddr: remoteAddr,
 	}
 }
 
-func (c *KRPCClient) MakeError(remoteAddr net.Addr, tranID string, errCode int, errMsg string) *Request {
-	params := MakeError(tranID, errCode, errMsg)
+func (c *KRPCClient) MakeError(id interface{}, remoteAddr net.Addr, tranID interface{}, errCode int, errMsg string) *Request {
+	params := MakeError(tranID.(string), errCode, errMsg)
 	return &Request{
 		Data:       params,
-		remoteAddr: remoteAddr,
+		RemoteAddr: remoteAddr,
 	}
 }
 
@@ -71,9 +71,9 @@ func (c *KRPCClient) Request(request *Request) {}
 
 func (c *KRPCClient) SendRequest(request *Request, retry int) {
 	tranID := request.Data.(map[string]interface{})["t"].(string)
-	tran := c.dht.transport.newTransaction(tranID, request, retry)
-	c.dht.transport.insertTransaction(tran)
-	defer c.dht.transport.deleteTransaction(tran.id)
+	tran := c.dht.transport.NewTransaction(tranID, request, retry)
+	c.dht.transport.InsertTransaction(tran)
+	defer c.dht.transport.DeleteTransaction(tran.ID)
 
 	success := false
 	for i := 0; i < retry; i++ {
@@ -93,12 +93,12 @@ func (c *KRPCClient) SendRequest(request *Request, retry int) {
 	}
 
 	if !success {
-		c.dht.GetRoutingTable().RemoveByAddr(request.remoteAddr.String())
+		c.dht.GetRoutingTable().RemoveByAddr(request.RemoteAddr.String())
 	}
 }
 
 func (c *KRPCClient) Send(request *Request) error {
-	count, err := c.conn.WriteToUDP([]byte(util.Encode(request.Data)), request.remoteAddr.(*net.UDPAddr))
+	count, err := c.conn.WriteToUDP([]byte(util.Encode(request.Data)), request.RemoteAddr.(*net.UDPAddr))
 	if err != nil {
 		return err
 	}
