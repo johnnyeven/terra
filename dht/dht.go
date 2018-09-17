@@ -25,7 +25,7 @@ type DistributedHashTable struct {
 	// not be K
 	BucketSize int
 	// the nodes num to be fresh in a kbucket
-	RefreshNodeNum int
+	RefreshNodeCount int
 	// udp, udp4, udp6
 	Network       string
 	// local network address

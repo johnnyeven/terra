@@ -339,7 +339,7 @@ func (rt *routingTable) Fresh() {
 
 		i := 0
 		for e := range bucket.nodes.Iter() {
-			if i < rt.table.RefreshNodeNum {
+			if i < rt.table.RefreshNodeCount {
 				node := e.Value.(*Node)
 				rt.table.transport.FindNode(node, bucket.RandomChildID())
 				rt.clearQueue.PushBack(node)

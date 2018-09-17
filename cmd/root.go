@@ -42,7 +42,7 @@ var RootCmd = &cobra.Command{
 			MaxNodes:             5000,
 			K:                    8,
 			BucketSize:           math.MaxInt32,
-			RefreshNodeNum:       256,
+			RefreshNodeCount:     256,
 			Network:              "udp4",
 			LocalAddr:            ":6881",
 			SeedNodes: []string{
