@@ -36,7 +36,7 @@ var RootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		table := dht.DistributedHashTable{
 			BucketExpiredAfter:   0,
-			NodeExpriedAfter:     0,
+			NodeExpiredAfter:     0,
 			CheckBucketPeriod:    5 * time.Second,
 			MaxTransactionCursor: math.MaxUint32,
 			MaxNodes:             5000,

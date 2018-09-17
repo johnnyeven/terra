@@ -12,7 +12,7 @@ type DistributedHashTable struct {
 	// the kbucket expired duration
 	BucketExpiredAfter time.Duration
 	// the node expired duration
-	NodeExpriedAfter time.Duration
+	NodeExpiredAfter time.Duration
 	// how long it checks whether the bucket is expired
 	CheckBucketPeriod time.Duration
 	// the max transaction id

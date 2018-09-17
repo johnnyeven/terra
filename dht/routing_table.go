@@ -85,7 +85,7 @@ func (b *bucket) Replace(node *Node) {
 func (b *bucket) Fresh(table *DistributedHashTable) {
 	for e := range b.nodes.Iter() {
 		node := e.Value.(*Node)
-		if time.Since(node.LastActiveTime) > table.NodeExpriedAfter {
+		if time.Since(node.LastActiveTime) > table.NodeExpiredAfter {
 			table.transport.Ping(node)
 		}
 	}
