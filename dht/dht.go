@@ -129,7 +129,7 @@ Run:
 			if dht.routingTable.Len() == 0 {
 				dht.join()
 			} else if dht.transport.TransactionLength() == 0 {
-				//go dht.routingTable.Fresh()
+				go dht.routingTable.Fresh()
 			}
 		case <-dht.quitChannel:
 			break Run

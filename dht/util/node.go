@@ -31,6 +31,7 @@ func EncodeCompactIPPortInfo(ip net.IP, port int) (info string, err error) {
 		p[0] = 0
 	}
 
+	ip = ip.To4()
 	info = string(append(ip, p...))
 	return
 }

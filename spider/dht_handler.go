@@ -109,7 +109,6 @@ func handleRequest(table *dht.DistributedHashTable, addr *net.UDPAddr, data map[
 			)
 		}
 
-		fmt.Println("nodes: ", len(nodes))
 		data := map[string]interface{}{
 			"id": table.ID(target),
 			"nodes": nodes,
