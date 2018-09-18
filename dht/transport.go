@@ -58,7 +58,7 @@ func (t *Transport) genIndexKey(queryType, address string) string {
 }
 
 func (t *Transport) genIndexKeyByTrans(tran *transaction) string {
-	return t.genIndexKey(tran.Data.(map[string]interface{})["q"].(string), tran.RemoteAddr.String())
+	return t.genIndexKey(tran.CMD, tran.RemoteAddr.String())
 }
 
 func (t *Transport) InsertTransaction(tran *transaction) {
@@ -87,7 +87,7 @@ func (t *Transport) TransactionLength() int {
 	return t.transactions.Len()
 }
 
-func (t *Transport) transaction(key string, keyType int) *transaction {
+func (t *Transport) transaction(key interface{}, keyType int) *transaction {
 	source := t.transactions
 	if keyType == 1 {
 		source = t.index
@@ -101,15 +101,15 @@ func (t *Transport) transaction(key string, keyType int) *transaction {
 	return v.(*transaction)
 }
 
-func (t *Transport) GetByTranID(tranID string) *transaction {
+func (t *Transport) GetByTranID(tranID interface{}) *transaction {
 	return t.transaction(tranID, 0)
 }
 
-func (t *Transport) GetByIndex(index string) *transaction {
+func (t *Transport) GetByIndex(index interface{}) *transaction {
 	return t.transaction(index, 1)
 }
 
-func (t *Transport) Get(transID string, addr *net.UDPAddr) *transaction {
+func (t *Transport) Get(transID interface{}, addr net.Addr) *transaction {
 	trans := t.GetByTranID(transID)
 
 	if trans == nil || trans.RemoteAddr.String() != addr.String() {

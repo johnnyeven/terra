@@ -50,7 +50,7 @@ type DistributedHashTable struct {
 	// packet handler
 	Handler func(table *DistributedHashTable, packet Packet)
 	// join method
-	HandshakeFunc func(node *Node, t *Transport, target string)
+	HandshakeFunc func(node *Node, t *Transport, target []byte)
 	// ping method
 	PingFunc func(node *Node, t *Transport)
 }
@@ -69,7 +69,7 @@ type Config struct {
 	SeedNodes            []string
 	TransportConstructor func(dht *DistributedHashTable, conn net.Conn, maxCursor uint64) *Transport
 	Handler              func(table *DistributedHashTable, packet Packet)
-	HandshakeFunc        func(node *Node, t *Transport, target string)
+	HandshakeFunc        func(node *Node, t *Transport, target []byte)
 	PingFunc             func(node *Node, t *Transport)
 }
 
@@ -129,7 +129,7 @@ Run:
 			if dht.routingTable.Len() == 0 {
 				dht.join()
 			} else if dht.transport.TransactionLength() == 0 {
-				go dht.routingTable.Fresh()
+				//go dht.routingTable.Fresh()
 			}
 		case <-dht.quitChannel:
 			break Run
@@ -190,7 +190,7 @@ func (dht *DistributedHashTable) join() {
 			continue
 		}
 
-		dht.HandshakeFunc(&Node{Addr: udpAddr}, dht.transport, dht.Self.ID.RawString())
+		dht.HandshakeFunc(&Node{Addr: udpAddr}, dht.transport, dht.Self.ID.RawData())
 	}
 }
 

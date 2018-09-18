@@ -341,7 +341,7 @@ func (rt *routingTable) Fresh() {
 		for e := range bucket.nodes.Iter() {
 			if i < rt.table.RefreshNodeCount {
 				node := e.Value.(*Node)
-				rt.table.HandshakeFunc(node, rt.table.GetTransport(), bucket.RandomChildID())
+				rt.table.HandshakeFunc(node, rt.table.GetTransport(), []byte(bucket.RandomChildID()))
 				rt.clearQueue.PushBack(node)
 			}
 			i++

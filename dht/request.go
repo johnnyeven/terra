@@ -6,7 +6,7 @@ import (
 
 type Request struct {
 	RemoteAddr net.Addr
-	cmd        string
+	CMD        string
 	ClientID   interface{}
 	Data       interface{}
 }

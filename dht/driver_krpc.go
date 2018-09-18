@@ -45,7 +45,7 @@ func (c *KRPCClient) MakeRequest(id interface{}, remoteAddr net.Addr, requestTyp
 	params := MakeQuery(c.dht.transport.GenerateTranID(), requestType, data.(map[string]interface{}))
 	return &Request{
 		ClientID:   id,
-		cmd:        requestType,
+		CMD:        requestType,
 		Data:       params,
 		RemoteAddr: remoteAddr,
 	}
@@ -76,6 +76,7 @@ func (c *KRPCClient) SendRequest(request *Request, retry int) {
 	defer c.dht.transport.DeleteTransaction(tran.ID)
 
 	success := false
+Run:
 	for i := 0; i < retry; i++ {
 		logrus.Debugf("[KRPCClient].Request c.conn.WriteToUDP try %d", i+1)
 		err := c.Send(request)
@@ -87,7 +88,7 @@ func (c *KRPCClient) SendRequest(request *Request, retry int) {
 		select {
 		case <-tran.ResponseChannel:
 			success = true
-			break
+			break Run
 		case <-time.After(time.Second * 15):
 		}
 	}

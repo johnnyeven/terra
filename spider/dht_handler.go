@@ -222,7 +222,7 @@ func findOrContinueRequestTarget(table *dht.DistributedHashTable, targetID *dht.
 		return nil
 	}
 
-	id := targetID.RawString()
+	id := targetID.RawData()
 	for _, node := range table.GetRoutingTable().GetNeighbors(targetID, table.K) {
 		switch requestType {
 		case dht.FindNodeType:

@@ -11,22 +11,22 @@ func Ping(node *dht.Node, t *dht.Transport) {
 	t.Request(request)
 }
 
-func FindNode(node *dht.Node, t *dht.Transport, target string) {
-	if target == "" {
-		target = t.GetDHT().Self.ID.RawString()
+func FindNode(node *dht.Node, t *dht.Transport, target []byte) {
+	if len(target) == 0 {
+		target = t.GetDHT().Self.ID.RawData()
 	}
 	data := map[string]interface{}{
-		"id":     t.GetDHT().ID(target),
-		"target": target,
+		"id":     t.GetDHT().ID(string(target)),
+		"target": string(target),
 	}
 
 	request := t.MakeRequest(node.ID, node.Addr, dht.FindNodeType, data)
 	t.Request(request)
 }
 
-func GetPeers(node *dht.Node, t *dht.Transport, infoHash string) {
+func GetPeers(node *dht.Node, t *dht.Transport, infoHash []byte) {
 	data := map[string]interface{}{
-		"id":        t.GetDHT().ID(infoHash),
+		"id":        t.GetDHT().ID(string(infoHash)),
 		"info_hash": infoHash,
 	}
 

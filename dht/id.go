@@ -106,6 +106,10 @@ func (id *Identity) RawString() string {
 	return string(id.data)
 }
 
+func (id *Identity) RawData() []byte {
+	return id.data
+}
+
 func newIdentity(size int) *Identity {
 	div := size / 8
 	mod := size % 8
