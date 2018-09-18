@@ -5,6 +5,7 @@ import (
 	"strings"
 	"strconv"
 	"errors"
+	"fmt"
 )
 
 func DecodeCompactIPPortInfo(info string) (ip net.IP, port int, err error) {
@@ -32,6 +33,7 @@ func EncodeCompactIPPortInfo(ip net.IP, port int) (info string, err error) {
 	}
 
 	info = string(append(ip, p...))
+	fmt.Println("EncodeCompactIPPortInfo: ", len(ip), " ", len(info))
 	return
 }
 
