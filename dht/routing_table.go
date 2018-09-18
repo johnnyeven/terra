@@ -6,6 +6,7 @@ import (
 	"strings"
 	"container/heap"
 	"git.profzone.net/profzone/terra/dht/util"
+	"fmt"
 )
 
 const maxPrefixLength = 160
@@ -272,6 +273,7 @@ func (rt *routingTable) GetNeighborCompactInfos(id *Identity, size int) []string
 
 	for i, node := range neighbors {
 		infos[i] = node.CompactNodeInfo()
+		fmt.Println("node.CompactNodeInfo: ", len(infos[i]))
 	}
 
 	return infos
