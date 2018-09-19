@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	"time"
-	"github.com/profzone/terra/dht/util"
+	"github.com/johnnyeven/terra/dht/util"
 )
 
 const (

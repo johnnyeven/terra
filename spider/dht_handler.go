@@ -1,12 +1,12 @@
 package spider
 
 import (
-	"github.com/profzone/terra/dht"
+	"github.com/johnnyeven/terra/dht"
 	"github.com/sirupsen/logrus"
 	"net"
 	"fmt"
 	"errors"
-	"github.com/profzone/terra/dht/util"
+	"github.com/johnnyeven/terra/dht/util"
 	"strings"
 )
 

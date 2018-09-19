@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 	"strings"
-	"github.com/profzone/terra/dht/util"
+	"github.com/johnnyeven/terra/dht/util"
 )
 
 type Node struct {

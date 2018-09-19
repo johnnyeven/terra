@@ -18,8 +18,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/sirupsen/logrus"
-	"github.com/profzone/terra/dht"
-	"github.com/profzone/terra/spider"
+	"github.com/johnnyeven/terra/dht"
+	"github.com/johnnyeven/terra/spider"
 )
 
 var (

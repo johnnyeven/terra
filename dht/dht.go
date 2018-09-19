@@ -5,7 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/ethereum/go-ethereum/p2p/nat"
 	"time"
-	"github.com/profzone/terra/dht/util"
+	"github.com/johnnyeven/terra/dht/util"
 	"math"
 )
 

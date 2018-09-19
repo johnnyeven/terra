@@ -1,6 +1,6 @@
 package spider
 
-import "github.com/profzone/terra/dht"
+import "github.com/johnnyeven/terra/dht"
 
 func Ping(node *dht.Node, t *dht.Transport) {
 	data := map[string]interface{}{
