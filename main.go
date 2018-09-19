@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 	"os"
-	"git.profzone.net/profzone/terra/cmd"
+	"github.com/profzone/terra/cmd"
 )
 
 func main() {

@@ -5,7 +5,7 @@ import (
 	"time"
 	"strings"
 	"container/heap"
-	"git.profzone.net/profzone/terra/dht/util"
+	"github.com/profzone/terra/dht/util"
 )
 
 const maxPrefixLength = 160
@@ -253,7 +253,7 @@ func (rt *routingTable) GetNeighbors(id *Identity, size int) []*Node {
 	rt.RLock()
 	nodes := make([]interface{}, 0, rt.cachedNodes.Len())
 	for item := range rt.cachedNodes.Iter() {
-		nodes = append(nodes, item.val.(*Node))
+		nodes = append(nodes, item.Value.(*Node))
 	}
 	rt.RUnlock()
 

@@ -5,7 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/ethereum/go-ethereum/p2p/nat"
 	"time"
-	"git.profzone.net/profzone/terra/dht/util"
+	"github.com/profzone/terra/dht/util"
 	"math"
 )
 
@@ -47,6 +47,8 @@ type DistributedHashTable struct {
 	packetChannel chan Packet
 	// system shutdown channel
 	quitChannel chan struct{}
+	// new node handler
+	NewNodeHandler func(peerID []byte, node *Node)
 	// packet handler
 	Handler func(table *DistributedHashTable, packet Packet)
 	// join method
@@ -68,6 +70,7 @@ type Config struct {
 	LocalAddr            string
 	SeedNodes            []string
 	TransportConstructor func(dht *DistributedHashTable, conn net.Conn, maxCursor uint64) *Transport
+	NewNodeHandler       func(peerID []byte, node *Node)
 	Handler              func(table *DistributedHashTable, packet Packet)
 	HandshakeFunc        func(node *Node, t *Transport, target []byte)
 	PingFunc             func(node *Node, t *Transport)
@@ -105,6 +108,7 @@ func NewDHT(config *Config) *DistributedHashTable {
 		LocalAddr:            config.LocalAddr,
 		SeedNodes:            config.SeedNodes,
 		TransportConstructor: config.TransportConstructor,
+		NewNodeHandler:       config.NewNodeHandler,
 		Handler:              config.Handler,
 		HandshakeFunc:        config.HandshakeFunc,
 		PingFunc:             config.PingFunc,

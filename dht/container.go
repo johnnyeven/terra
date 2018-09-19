@@ -6,8 +6,8 @@ import (
 )
 
 type mapItem struct {
-	key interface{}
-	val interface{}
+	Key   interface{}
+	Value interface{}
 }
 
 // SyncedMap represents a goroutine-safe map.
@@ -80,8 +80,8 @@ func (smap *SyncedMap) Iter() <-chan mapItem {
 		smap.RLock()
 		for key, val := range smap.data {
 			ch <- mapItem{
-				key: key,
-				val: val,
+				Key:   key,
+				Value: val,
 			}
 		}
 		smap.RUnlock()
