@@ -1,4 +1,4 @@
-package spider
+package bt
 
 import (
 	"github.com/johnnyeven/terra/dht"

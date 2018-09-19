@@ -19,7 +19,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/sirupsen/logrus"
 	"github.com/johnnyeven/terra/dht"
-	"github.com/johnnyeven/terra/spider"
+	"github.com/johnnyeven/terra/bt"
 )
 
 var (
@@ -40,9 +40,9 @@ var RootCmd = &cobra.Command{
 			"dht.transmissionbt.com:6881",
 		}
 		config.TransportConstructor = dht.NewKRPCTransport
-		config.Handler = spider.BTHandlePacket
-		config.HandshakeFunc = spider.FindNode
-		config.PingFunc = spider.Ping
+		config.Handler = bt.BTHandlePacket
+		config.HandshakeFunc = bt.FindNode
+		config.PingFunc = bt.Ping
 
 		table := dht.NewDHT(config)
 		table.Run()
