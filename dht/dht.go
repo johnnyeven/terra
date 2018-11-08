@@ -183,7 +183,6 @@ func (dht *DistributedHashTable) init() {
 	if err != nil {
 		logrus.Panicf("[DistributedHashTable].init NewNode err: %v", err)
 	}
-	logrus.Info("initialized")
 }
 
 func (dht *DistributedHashTable) join() {
@@ -206,7 +205,6 @@ func (dht *DistributedHashTable) listen() {
 		}
 	}
 	go dht.transport.Receive(dht.packetChannel)
-	logrus.Info("listened")
 }
 
 func (dht *DistributedHashTable) ID(target string) string {
