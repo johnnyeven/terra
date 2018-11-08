@@ -9,9 +9,9 @@ import (
 )
 
 type Node struct {
-	ID             *Identity
-	Addr           *net.UDPAddr
-	LastActiveTime time.Time
+	ID             *Identity    `json:"id"`
+	Addr           *net.UDPAddr `json:"addr"`
+	LastActiveTime time.Time    `json:"lastActiveTime"`
 }
 
 func (node *Node) CompactNodeInfo() string {

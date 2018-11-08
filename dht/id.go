@@ -11,6 +11,10 @@ type Identity struct {
 	data []byte
 }
 
+func (id *Identity) MarshalText() (text []byte, err error) {
+	return
+}
+
 func (id *Identity) Bit(index int) int {
 	if index >= id.Size {
 		logrus.Panic("[Identity].Bit err: index out of range")
