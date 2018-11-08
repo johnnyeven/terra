@@ -11,8 +11,8 @@ type Identity struct {
 	data []byte
 }
 
-func (id *Identity) MarshalText() (text []byte, err error) {
-	return
+func (id *Identity) MarshalText() ([]byte, error) {
+	return []byte(id.HexString()), nil
 }
 
 func (id *Identity) Bit(index int) int {
@@ -112,6 +112,10 @@ func (id *Identity) RawString() string {
 
 func (id *Identity) RawData() []byte {
 	return id.data
+}
+
+func (id *Identity) HexString() string {
+	return fmt.Sprintf("0x%x", id.data)
 }
 
 func newIdentity(size int) *Identity {
