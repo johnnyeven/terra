@@ -134,6 +134,8 @@ Run:
 			break Run
 		}
 	}
+	close(t.requestChannel)
+	close(t.quitChannel)
 }
 
 func (t *Transport) SendRequest(request *Request, retry int) {
@@ -181,8 +183,6 @@ func (t *Transport) Write(b []byte) (n int, err error) {
 
 func (t *Transport) Close() error {
 	t.quitChannel <- struct{}{}
-	close(t.requestChannel)
-	close(t.quitChannel)
 	return t.client.Close()
 }
 
