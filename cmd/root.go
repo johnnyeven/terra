@@ -20,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/johnnyeven/terra/dht"
 	"github.com/johnnyeven/terra/bt"
+	"strings"
 )
 
 var (
@@ -76,7 +77,7 @@ func initCmdConfig() {
 	} else {
 		// Search config in home directory with name ".peer-to-world" (without extension).
 		viper.AddConfigPath("./")
-		viper.SetConfigName(".terra")
+		viper.SetConfigName(strings.Join([]string{"", "terra", configFileGroup}, "."))
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
